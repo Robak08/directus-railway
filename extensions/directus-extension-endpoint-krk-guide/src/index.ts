@@ -70,16 +70,12 @@ export default defineEndpoint((router) => {
 			});
 			const firstName = customerObj.name.split(' ')[0] || customerObj.name;
 			const options = {
-				from: `${customerObj.name} <${customerObj.email}>`,
+				from: 'helena@krakovanopas.fi',
+				to: process.env.EMAIL_DEVMODE == "true" ? 'robert.hamiga@gmail.com' : customerObj.email,
 				envelope: {
 					from: 'helena@krakovanopas.fi',
-					// to: customerObj.email
 					to: process.env.EMAIL_DEVMODE == "true" ? 'robert.hamiga@gmail.com' : customerObj.email,
 				},
-				// to: "helena@iloaconsulting.fi",
-				to: process.env.EMAIL_DEVMODE == "true" ? 'robert.hamiga@gmail.com' : customerObj.email,
-				// to: 'robert.hamiga@gmail.com',
-				// to: customerObj.email,
 				subject: `Hei ${firstName}, kiitos ostoksestasi – Krakovan taskuopas on täällä! 🌟`,
 				attachments: [
 					{
