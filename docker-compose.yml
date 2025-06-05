@@ -36,7 +36,7 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     # Or use the latest version available on Docker Hub.
-    # image: directus/directus:11
+    image: directus/directus:11.7.2
     pull_policy: always
     ports:
       - 8055:8055
@@ -113,7 +113,8 @@ services:
       EMAIL_SMTP_USER: ${EMAIL_SMTP_USER}
       EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD}
       EMAIL_FROM: ${EMAIL_FROM}
-
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      EMAIL_WEBHOOK_URL: ${EMAIL_WEBHOOK_URL}
       WEBSOCKETS_ENABLED: "true"
       EXTENSIONS_AUTO_RELOAD: "true"
 
