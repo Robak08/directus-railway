@@ -13,7 +13,6 @@
 		"dist"
 	],
 	"directus:extension": {
-		"name": "krk-guide",
 		"type": "endpoint",
 		"path": "dist/index.js",
 		"source": "src/index.ts",
