@@ -1,5 +1,4 @@
 import { defineEndpoint } from '@directus/extensions-sdk';
-import { createError } from '@directus/errors';
 import nodemailer from "nodemailer";
 import Stripe from 'stripe';
 
@@ -7,17 +6,18 @@ export default defineEndpoint((router) => {
 	router.post('/guide-webhook', async (_req, res) => {
 		try {
 			const data = _req.body;
-			// console.log('/guide-webhook', _req);
-			// console.log("TEST STRAPI EVENT_____", data)
 			const { id, status, amount, amount_received, customer } = data?.data.object;
+			// if (data?.type === 'payment_intent.succeeded')
+			// 	console.log('DATA', data?.type, data?.data.object)
 			if (data?.type !== 'payment_intent.succeeded' || status !== 'succeeded') {
-				const errorMessage = createError('/guide-webhook err', 'wrong payload', 403);
-				res.send({ received: true, mes: 'wrong payload' });
-				throw new errorMessage();
+				// console.log('/guide-webhook err:', data?.type, data?.data.object.status);
+				throw new Error("Wrong payload - 403");
 			}
-
 			// console.log(`PAYMENT ID___: ${id}, customer ID___: ${customer}`);
-			if (!process.env.STRIPE_SECRET_KEY) console.log('no stripe secret in env found');
+			if (!process.env.STRIPE_SECRET_KEY) {
+				// console.log('no stripe secret in env found');
+				throw new Error("Config err: STRIPE_SECRET_KEY missing");
+			}
 			const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 			const customerObj = await stripe.customers.retrieve(customer);
 
@@ -38,19 +38,18 @@ export default defineEndpoint((router) => {
 				body: JSON.stringify(payloadObject),
 			});
 			res.send({ received: true });
-		} catch (error: any) {
-			const errorMessage = createError('/guide-webhook err', error, 403);
-			res.send({ received: true, mes: error });
-			throw new errorMessage();
+		} catch (err: any) {
+			// console.log('/guide-webhook err:', err)
+			console.log('/guide-webhook err')
+			res.send({ received: true, mes: err });
 		}
 	});
 	router.post('/guide-email', async (_req, res) => {
 		try {
 			const { payment_id, customer_id, customer_email, amount, amount_received, } = _req.body;
 			if (!payment_id || !customer_id || !amount || !amount_received) {
-				console.log('Wrong data payload', _req.body)
-				res.send({ mes: 'Wrong data payload' });
-				return
+				console.log('/guide-email wrong data payload')
+				throw new Error("Wrong payload - 403");
 			}
 			//INFO STRIPE DATA VERIFICATION
 			const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -58,9 +57,8 @@ export default defineEndpoint((router) => {
 			const customerObj = await stripe.customers.retrieve(customer_id);
 
 			if (paymentObj.amount !== amount || paymentObj.amount_received !== amount_received || customerObj.email !== customer_email) {
-				console.log('Invalid payload', _req.body)
-				res.send({ received: true });
-				return;
+				console.log('/guide-email invalid payload')
+				throw new Error("Wrong payload - 403");
 			}
 			//INFO EMAIL PART
 
@@ -85,8 +83,8 @@ export default defineEndpoint((router) => {
 				subject: `Hei ${firstName}, kiitos ostoksestasi – Krakovan taskuopas on täällä! 🌟`,
 				attachments: [
 					{
-						filename: "krakovan_opas.pdf",
-						path: "./extensions/directus-extension-endpoint-guide/assets/krakovan_opas.pdf",
+						filename: "Krakovan_upeimmat_elämykset–suomalainen_taskuopas_unelmalomaan-05-06-25.pdf",
+						path: "./extensions/directus-extension-endpoint-guide/assets/Krakovan_upeimmat_elämykset–suomalainen_taskuopas_unelmalomaan-05-06-25.pdf",
 					},
 
 				],
@@ -111,11 +109,9 @@ export default defineEndpoint((router) => {
 			const sendRes = await transporter.sendMail(options);
 			// console.log('TEST EMAIL', sendRes?.response);
 			res.send({ sent: true });
-		} catch (error: any) {
-			// console.log('route: "/" error', error)
-			const errorMessage = createError('/guide-email err', error, 403);
-			res.send({ received: true });
-			throw new errorMessage();
+		} catch (err: any) {
+			console.log('/guide-webhook err:', err)
+			res.send({ received: true, mes: err });
 		}
 	})
 });
