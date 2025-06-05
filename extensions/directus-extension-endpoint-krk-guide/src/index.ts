@@ -61,7 +61,6 @@ export default defineEndpoint((router) => {
 				throw new Error("Wrong payload - 403");
 			}
 			//INFO EMAIL PART
-
 			const transporter = nodemailer.createTransport({
 				service: "gmail",
 				auth: {
