@@ -117,6 +117,8 @@ services:
       EMAIL_WEBHOOK_URL: ${EMAIL_WEBHOOK_URL}
       WEBSOCKETS_ENABLED: "true"
       EXTENSIONS_AUTO_RELOAD: "true"
+      CHOKIDAR_USEPOLLING: true  
+      CHOKIDAR_INTERVAL: 2000 # default is 300 milliseconds
 
       # Make sure to set this in production
       # (see https://docs.directus.io/self-hosted/config-options#general)
