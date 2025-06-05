@@ -94,12 +94,11 @@ export default defineEndpoint((router) => {
 				<strong>Hei ja kiitos tilauksestasi!</strong 🥳<br />
 				Teit erinomaisen valinnan, kun nappasit Krakovan taskuoppaan mukaasi tulevalle reissulle.
 				</p>
-				<p>📥 Lataa opas tästä: (LINK TO GOOGLE DRIVE)</p>
-				
+				<p>📥 Löydät sen tämän meilin liitteestä.</p>
 				<p>💳 Kuitti ostoksestasi tulee automaattisesti Stripe-palvelusta erillisessä viestissä.<br />
 					💡 <strong>Vinkki</strong>: Tallenna taskuopas puhelimeesi, niin se on helposti käytettävissä matkasi aikana – olitpa sitten vanhankaupungin kujilla, matkalla suolakaivoksille tai vaikka etsimässä hyvää pysähdyspaikkaa lounaalle.
 				</p>
-				<p>(Huomaathan, että taskuopas on tarkoitettu henkilökohtaiseen käyttöösi eikä opasta ole lupa jakaa eteenpäin).</p>
+				<p>(Huomaathan, että taskuopas on tarkoitettu henkilökohtaiseen käyttöösi. Kunnioitathan työtäni,  älä jaa opasta eteenpäin).</p>
 				<p>
 				Mukavaa matkaa ja nautinnollisia hetkiä Krakovassa!<br />
 				– Helena, Krakovan opas<br />
