@@ -36,7 +36,7 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     # Or use the latest version available on Docker Hub.
-    image: directus/directus:11.7.2
+    image: directus/directus:11.8.0
     pull_policy: always
     ports:
       - 8055:8055
