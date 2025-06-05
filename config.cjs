@@ -56,5 +56,6 @@ module.exports = function (env) {
 		EMAIL_FROM: env.EMAIL_FROM,
 		STRIPE_SECRET_KEY: env.STRIPE_SECRET_KEY,
 		EMAIL_WEBHOOK_URL: env.EMAIL_WEBHOOK_URL,
+		EMAIL_DEVMODE: env.EMAIL_DEVMODE,
 	};
 };
