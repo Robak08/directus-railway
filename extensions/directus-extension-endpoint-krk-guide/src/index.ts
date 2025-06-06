@@ -6,29 +6,16 @@ export default defineEndpoint((router) => {
 	router.post('/guide-webhook', async (_req, res) => {
 		try {
 			const data = _req.body;
-			const { id, status, amount, amount_received, customer } = data?.data.object;
-			// if (data?.type === 'payment_intent.succeeded')
-			// 	console.log('DATA', data?.type, data?.data.object)
+			const { id, status, amount, amount_received, receipt_email } = data?.data.object;
 			if (data?.type !== 'payment_intent.succeeded' || status !== 'succeeded') {
-				// console.log('/guide-webhook err:', data?.type, data?.data.object.status);
 				throw new Error("Wrong payload - 403");
 			}
-			// console.log(`PAYMENT ID___: ${id}, customer ID___: ${customer}`);
-			if (!process.env.STRIPE_SECRET_KEY) {
-				// console.log('no stripe secret in env found');
-				throw new Error("Config err: STRIPE_SECRET_KEY missing");
-			}
-			const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-			const customerObj = await stripe.customers.retrieve(customer);
-
 			const payloadObject = {
 				payment_id: id,
-				customer_id: customer,
-				customer_email: customerObj.email,
+				customer_email: receipt_email,
 				amount,
 				amount_received,
 			}
-			// console.log("GUIDE-WEBHOOK before fetch to other endpoint", payloadObject)
 			// TODO -> change for production make it ENV? 
 			const emailRes = await fetch(process.env.EMAIL_WEBHOOK_URL || 'http://localhost:8055/krk-guide/guide-email', {
 				method: 'POST',
@@ -39,28 +26,28 @@ export default defineEndpoint((router) => {
 			});
 			res.send({ received: true });
 		} catch (err: any) {
-			// console.log('/guide-webhook err:', err)
 			console.log('/guide-webhook err')
 			res.send({ received: true, mes: err });
 		}
 	});
 	router.post('/guide-email', async (_req, res) => {
 		try {
-			const { payment_id, customer_id, customer_email, amount, amount_received, } = _req.body;
-			if (!payment_id || !customer_id || !amount || !amount_received) {
+			const { payment_id, customer_email, amount, amount_received, } = _req.body;
+			if (!payment_id || !amount || !amount_received) {
 				console.log('/guide-email wrong data payload')
 				throw new Error("Wrong payload - 403");
 			}
-			//INFO STRIPE DATA VERIFICATION
+			if (!process.env.STRIPE_SECRET_KEY) {
+				throw new Error("Config err: STRIPE_SECRET_KEY missing");
+			}
 			const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 			const paymentObj = await stripe.paymentIntents.retrieve(payment_id);
-			const customerObj = await stripe.customers.retrieve(customer_id);
 
-			if (paymentObj.amount !== amount || paymentObj.amount_received !== amount_received || customerObj.email !== customer_email) {
+			if (paymentObj.amount !== amount || paymentObj.amount_received !== amount_received) {
 				console.log('/guide-email invalid payload dont match with STRIPE')
 				throw new Error("Wrong payload - 403");
 			}
-			//INFO EMAIL PART
+
 			const transporter = nodemailer.createTransport({
 				service: "gmail",
 				auth: {
@@ -68,15 +55,14 @@ export default defineEndpoint((router) => {
 					pass: process.env.EMAIL_SMTP_PASSWORD,
 				},
 			});
-			const firstName = customerObj.name.split(' ')[0] || customerObj.name;
 			const options = {
 				from: 'helena@krakovanopas.fi',
-				to: process.env.EMAIL_DEVMODE == "true" ? 'robert.hamiga@gmail.com' : customerObj.email,
+				to: process.env.EMAIL_DEVMODE == "true" ? 'robert.hamiga@gmail.com' : customer_email,
 				envelope: {
 					from: 'helena@krakovanopas.fi',
-					to: process.env.EMAIL_DEVMODE == "true" ? 'robert.hamiga@gmail.com' : customerObj.email,
+					to: process.env.EMAIL_DEVMODE == "true" ? 'robert.hamiga@gmail.com' : customer_email,
 				},
-				subject: `Hei ${firstName}, kiitos ostoksestasi – Krakovan taskuopas on täällä! 🌟`,
+				subject: `Hei, kiitos ostoksestasi – Krakovan taskuopas on täällä! 🌟`,
 				attachments: [
 					{
 						filename: "Krakovan_upeimmat_elämykset–suomalainen_taskuopas_unelmalomaan-05-06-25.pdf",
@@ -102,7 +88,6 @@ export default defineEndpoint((router) => {
 				`,
 			};
 			const sendRes = await transporter.sendMail(options);
-			// console.log('TEST EMAIL', sendRes?.response);
 			res.send({ sent: true });
 		} catch (err: any) {
 			console.log('/guide-webhook err:', err)
