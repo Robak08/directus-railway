@@ -16,7 +16,6 @@ export default defineEndpoint((router) => {
 				amount,
 				amount_received,
 			}
-			// TODO -> change for production make it ENV? 
 			const emailRes = await fetch(process.env.EMAIL_WEBHOOK_URL || 'http://localhost:8055/krk-guide/guide-email', {
 				method: 'POST',
 				headers: {
@@ -56,11 +55,11 @@ export default defineEndpoint((router) => {
 				},
 			});
 			const options = {
-				from: 'helena@krakovanopas.fi',
-				to: process.env.EMAIL_DEVMODE == "true" ? 'robert.hamiga@gmail.com' : customer_email,
+				from: process.env.EMAIL_SMTP_USER,
+				to: process.env.EMAIL_DEVMODE == "true" ? process.env.EMAIL_DEV_USER : customer_email,
 				envelope: {
-					from: 'helena@krakovanopas.fi',
-					to: process.env.EMAIL_DEVMODE == "true" ? 'robert.hamiga@gmail.com' : customer_email,
+					from: process.env.EMAIL_SMTP_USER,
+					to: process.env.EMAIL_DEVMODE == "true" ? process.env.EMAIL_DEV_USER : customer_email,
 				},
 				subject: `Hei, kiitos ostoksestasi – Krakovan taskuopas on täällä! 🌟`,
 				attachments: [

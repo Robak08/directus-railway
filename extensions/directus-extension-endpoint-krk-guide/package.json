@@ -28,6 +28,7 @@
 		"@directus/errors": "^2.0.1",
 		"@directus/extensions-sdk": "13.1.0",
 		"@types/node": "^22.15.21",
+		"@types/nodemailer": "^6.4.17",
 		"nodemailer": "^7.0.3",
 		"typescript": "^5.8.3"
 	},
