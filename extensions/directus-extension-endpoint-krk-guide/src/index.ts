@@ -55,10 +55,10 @@ export default defineEndpoint((router) => {
 				},
 			});
 			const options = {
-				from: process.env.EMAIL_SMTP_USER,
+				from: process.env.EMAIL_FROM,
 				to: process.env.EMAIL_DEVMODE == "true" ? process.env.EMAIL_DEV_USER : customer_email,
 				envelope: {
-					from: process.env.EMAIL_SMTP_USER,
+					from: process.env.EMAIL_FROM,
 					to: process.env.EMAIL_DEVMODE == "true" ? process.env.EMAIL_DEV_USER : customer_email,
 				},
 				subject: `Hei, kiitos ostoksestasi – Krakovan taskuopas on täällä! 🌟`,
