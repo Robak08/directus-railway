@@ -1,29 +1,70 @@
 import { defineEndpoint } from '@directus/extensions-sdk';
 import nodemailer from "nodemailer";
 import Stripe from 'stripe';
+import MailerLite from '@mailerlite/mailerlite-nodejs';
+import dayjs from 'dayjs'
 
 export default defineEndpoint((router) => {
 	router.post('/guide-webhook', async (_req, res) => {
 		try {
 			const data = _req.body;
-			const { id, status, amount, amount_received, receipt_email } = data?.data.object;
-			if (data?.type !== 'payment_intent.succeeded' || status !== 'succeeded') {
-				throw new Error("Wrong payload - 403");
+			const { status } = data?.data.object;
+			// TODO create stripe headers signature verification
+			if (data?.type === 'checkout.session.completed' && status === 'complete') {
+				// get name and email and add subscriber to mailerlite
+				if (!process.env.MAILERLITE_API_KEY) {
+					throw "Config err: MAILERLITE_API_KEY missing";
+				}
+				const { email, name } = data?.data.object?.customer_details;
+				const buyersGroupId = "156806631449953435";
+				const krakowTipsGroupId = "145957335472276790";
+				const mailerlite = new MailerLite({
+					api_key: process.env.MAILERLITE_API_KEY
+				});
+
+				const splitName = name.split(' ');
+				const mailerParams = {
+					email: email,
+					fields: {
+						name: splitName[0] || null,
+						last_name: splitName[1] || null,
+					},
+					groups: [buyersGroupId, krakowTipsGroupId],
+					status: "active",
+					subscribed_at: dayjs().subtract(3, "hour").format("YYYY-MM-DD HH:mm:ss"),
+				};
+				mailerlite.subscribers
+					.createOrUpdate(mailerParams)
+					.then((response) => {
+						// console.log(response.data);
+						if (response) {
+							res.send({ received: true });
+						}
+					})
+					.catch((error) => {
+						if (error.response) console.log(error.response.data);
+						throw `Mailerlite subscriber error, ${email}`;
+					});
+			} else if (data?.type === 'payment_intent.succeeded' && status === 'succeeded') {
+				const { id, amount, amount_received, receipt_email } = data?.data.object;
+				// payment successful -> send guide via email endpoint
+				const payloadObject = {
+					payment_id: id,
+					customer_email: receipt_email,
+					amount,
+					amount_received,
+				};
+				const emailRes = await fetch(process.env.EMAIL_WEBHOOK_URL || 'http://localhost:8055/krk-guide/guide-email', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify(payloadObject),
+				});
+				res.send({ received: true });
+			} else {
+				throw "Wrong payload - 403";
 			}
-			const payloadObject = {
-				payment_id: id,
-				customer_email: receipt_email,
-				amount,
-				amount_received,
-			}
-			const emailRes = await fetch(process.env.EMAIL_WEBHOOK_URL || 'http://localhost:8055/krk-guide/guide-email', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(payloadObject),
-			});
-			res.send({ received: true });
 		} catch (err: any) {
 			console.log('/guide-webhook err')
 			res.send({ received: true, mes: err });
@@ -34,19 +75,18 @@ export default defineEndpoint((router) => {
 			const { payment_id, customer_email, amount, amount_received, } = _req.body;
 			if (!payment_id || !amount || !amount_received) {
 				console.log('/guide-email wrong data payload')
-				throw new Error("Wrong payload - 403");
+				throw "Wrong payload - 403";
 			}
 			if (!process.env.STRIPE_SECRET_KEY) {
-				throw new Error("Config err: STRIPE_SECRET_KEY missing");
+				throw "Config err: STRIPE_SECRET_KEY missing";
 			}
 			const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 			const paymentObj = await stripe.paymentIntents.retrieve(payment_id);
-
+			if (!paymentObj.id) throw 'Cannot find transaction in stripe';
 			if (paymentObj.amount !== amount || paymentObj.amount_received !== amount_received) {
 				console.log('/guide-email invalid payload dont match with STRIPE')
-				throw new Error("Wrong payload - 403");
+				throw "Wrong payload - 403";
 			}
-
 			const transporter = nodemailer.createTransport({
 				service: "gmail",
 				auth: {
