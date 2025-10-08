@@ -18,9 +18,11 @@ export default defineEndpoint((router) => {
 				const { email, name } = data?.data.object?.customer_details;
 				const buyersGroupId = "156806631449953435";
 				const krakowTipsGroupId = "145957335472276790";
+				const muralsGroupId = '167510330590627092';
 				const mailerlite = new MailerLite({
 					api_key: process.env.MAILERLITE_API_KEY
 				});
+
 
 				const splitName = name.split(' ');
 				const mailerParams = {
@@ -33,6 +35,27 @@ export default defineEndpoint((router) => {
 					status: "active",
 					subscribed_at: dayjs().subtract(3, "hour").format("YYYY-MM-DD HH:mm:ss"),
 				};
+
+				interface MailerLiteCustomField {
+					key: string;
+					label: { custom: string, type: string },
+					optional: true,
+					text: {
+						default_value: string | null,
+						maximum_length: number | null,
+						minimum_length: number | null,
+						value: string | null
+					},
+					type: string
+				}
+				const customFields: MailerLiteCustomField[] = data?.data.object?.custom_fields;
+				const bonusCodeField = customFields?.length > 0 ? customFields.find(c => c.key === 'bonuskoodi') : null;
+				if (bonusCodeField) {
+					const muralValues = ['muurali', 'muraali'];
+					if (bonusCodeField?.text?.value && muralValues.includes(bonusCodeField?.text?.value?.toLowerCase())) {
+						mailerParams.groups.push(muralsGroupId);
+					}
+				}
 				mailerlite.subscribers
 					.createOrUpdate(mailerParams)
 					.then((response) => {
