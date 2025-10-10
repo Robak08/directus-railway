@@ -2,7 +2,7 @@
 	"name": "krk-guide",
 	"description": "Stripe webhook + nodemailer email sending",
 	"icon": "extension",
-	"version": "1.2.5",
+	"version": "1.2.6",
 	"keywords": [
 		"directus",
 		"directus-extension",
@@ -29,12 +29,10 @@
 		"@directus/extensions-sdk": "13.1.0",
 		"@types/node": "^22.15.21",
 		"@types/nodemailer": "^6.4.17",
-		"nodemailer": "^7.0.3",
 		"typescript": "^5.8.3"
 	},
 	"dependencies": {
 		"@mailerlite/mailerlite-nodejs": "^1.4.0",
-		"dayjs": "^1.11.13",
-		"stripe": "^18.1.1"
+		"dayjs": "^1.11.13"
 	}
 }

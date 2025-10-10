@@ -91,7 +91,7 @@ export default defineEndpoint((router) => {
 				throw "Wrong payload - 403";
 			}
 		} catch (err: any) {
-			console.log('/guide-webhook err')
+			console.log('/guide-webhook err', err)
 			res.send({ received: true, mes: err });
 		}
 	});

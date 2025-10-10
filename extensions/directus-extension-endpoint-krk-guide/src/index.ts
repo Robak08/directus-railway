@@ -1,9 +1,19 @@
 import { defineEndpoint } from '@directus/extensions-sdk';
-import nodemailer from "nodemailer";
-import Stripe from 'stripe';
 import MailerLite from '@mailerlite/mailerlite-nodejs';
 import dayjs from 'dayjs'
 
+interface MailerLiteCustomField {
+	key: string;
+	label: { custom: string, type: string },
+	optional: true,
+	text: {
+		default_value: string | null,
+		maximum_length: number | null,
+		minimum_length: number | null,
+		value: string | null
+	},
+	type: string
+}
 export default defineEndpoint((router) => {
 	router.post('/guide-webhook', async (_req, res) => {
 		try {
@@ -12,12 +22,12 @@ export default defineEndpoint((router) => {
 			// TODO create stripe headers signature verification
 			if (data?.type === 'checkout.session.completed' && status === 'complete') {
 				// get name and email and add subscriber to mailerlite
-				console.log("checkout.session.completed___", data?.data.object?.customer_details?.email)
+				// console.log("checkout.session.completed___", data?.data.object?.customer_details?.email)
 				if (!process.env.MAILERLITE_API_KEY) {
 					throw "Config err: MAILERLITE_API_KEY missing";
 				}
 				const { email, name } = data?.data.object?.customer_details;
-				const buyersGroupId = "156806631449953435";
+				const buyersGroupId = "156806631449953435"; // guidebook sending group
 				const krakowTipsGroupId = "145957335472276790";
 				const muralsGroupId = '167510330590627092';
 				const mailerlite = new MailerLite({
@@ -36,23 +46,12 @@ export default defineEndpoint((router) => {
 					subscribed_at: dayjs().subtract(3, "hour").format("YYYY-MM-DD HH:mm:ss"),
 				};
 
-				interface MailerLiteCustomField {
-					key: string;
-					label: { custom: string, type: string },
-					optional: true,
-					text: {
-						default_value: string | null,
-						maximum_length: number | null,
-						minimum_length: number | null,
-						value: string | null
-					},
-					type: string
-				}
 				const customFields: MailerLiteCustomField[] = data?.data.object?.custom_fields;
 				const bonusCodeField = customFields?.length > 0 ? customFields.find(c => c.key === 'bonus') : null;
 				if (bonusCodeField) {
 					const muralValues = ['muurali', 'muraali'];
 					if (bonusCodeField?.text?.value && muralValues.includes(bonusCodeField?.text?.value?.toLowerCase())) {
+						console.log("bonuscode", bonusCodeField?.text?.value?.toLowerCase())
 						mailerParams.groups.push(muralsGroupId);
 					}
 				}
@@ -68,24 +67,6 @@ export default defineEndpoint((router) => {
 						if (error.response) console.log(error.response.data);
 						throw `Mailerlite subscriber error, ${email}`;
 					});
-			} else if (data?.type === 'payment_intent.succeeded' && status === 'succeeded') {
-				const { id, amount, amount_received, receipt_email } = data?.data.object;
-				console.log("payment_intent.succeeded___", receipt_email, process.env.EMAIL_WEBHOOK_URL)
-				// payment successful -> send guide via email endpoint
-				const payloadObject = {
-					payment_id: id,
-					customer_email: receipt_email,
-					amount,
-					amount_received,
-				};
-				const emailRes = await fetch(process.env.EMAIL_WEBHOOK_URL || 'http://localhost:8055/krk-guide/guide-email', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify(payloadObject),
-				});
-				console.log('/guide-webhook internal webhook call emailRes', emailRes);
 				res.send({ received: true });
 			} else {
 				throw "Wrong payload - 403";
@@ -95,71 +76,5 @@ export default defineEndpoint((router) => {
 			res.send({ received: true, mes: err });
 		}
 	});
-	router.post('/guide-email', async (_req, res) => {
-		try {
-			const { payment_id, customer_email, amount, amount_received, } = _req.body;
-			if (!payment_id || !amount || !amount_received) {
-				console.log('/guide-email wrong data payload')
-				throw "Wrong payload - 403";
-			}
-			if (!process.env.STRIPE_SECRET_KEY) {
-				throw "Config err: STRIPE_SECRET_KEY missing";
-			}
-			const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-			const paymentObj = await stripe.paymentIntents.retrieve(payment_id);
-			if (!paymentObj.id) throw 'Cannot find transaction in stripe';
-			if (paymentObj.amount !== amount || paymentObj.amount_received !== amount_received) {
-				console.log('/guide-email invalid payload dont match with STRIPE')
-				throw "Wrong payload - 403";
-			}
-			const transporter = nodemailer.createTransport({
-				service: "gmail",
-				auth: {
-					user: process.env.EMAIL_SMTP_USER,
-					pass: process.env.EMAIL_SMTP_PASSWORD,
-				},
-			});
-			const options = {
-				from: process.env.EMAIL_FROM,
-				to: process.env.EMAIL_DEVMODE == "true" ? process.env.EMAIL_DEV_USER : customer_email,
-				subject: `Hei, kiitos ostoksestasi – Krakovan taskuopas on täällä! 🌟`,
-				attachments: [
-					{
-						filename: "Krakovan_upeimmat_elämykset–suomalainen_taskuopas_unelmalomaan-05-06-25.pdf",
-						path: "./extensions/directus-extension-endpoint-krk-guide/assets/Krakovan_upeimmat_elämykset–suomalainen_taskuopas_unelmalomaan-05-06-25.pdf",
-					},
-
-				],
-				html: `
-				<p>
-				<strong>Hei ja kiitos tilauksestasi!</strong 🥳<br />
-				Teit erinomaisen valinnan, kun nappasit Krakovan taskuoppaan mukaasi tulevalle reissulle.
-				</p>
-				<p>📥 Löydät sen tämän meilin liitteestä.</p>
-				<p>💳 Kuitti ostoksestasi tulee automaattisesti Stripe-palvelusta erillisessä viestissä.<br />
-					💡 <strong>Vinkki</strong>: Tallenna taskuopas puhelimeesi, niin se on helposti käytettävissä matkasi aikana – olitpa sitten vanhankaupungin kujilla, matkalla suolakaivoksille tai vaikka etsimässä hyvää pysähdyspaikkaa lounaalle.
-				</p>
-				<p>(Huomaathan, että taskuopas on tarkoitettu henkilökohtaiseen käyttöösi. Kunnioitathan työtäni,  älä jaa opasta eteenpäin).</p>
-				<p>
-				Mukavaa matkaa ja nautinnollisia hetkiä Krakovassa!<br />
-				– Helena, Krakovan opas<br />
-				Krakovan opas HT (y-tunnus: 3258298-1)
-				</p>
-				`,
-			};
-			try {
-				const sendRes = await transporter.sendMail(options);
-				console.log('/guide-email after sendMail', sendRes);
-				res.send({ sent: true });
-			} catch (err) {
-				console.error('/guide-email sendMail error:', err);
-				res.status(500).send({ mes: err });
-			}
-			// res.send({ sent: true });
-		} catch (err: any) {
-			console.log('/guide-webhook err:', err)
-			res.send({ received: true, mes: err });
-		}
-	})
 }
 );
