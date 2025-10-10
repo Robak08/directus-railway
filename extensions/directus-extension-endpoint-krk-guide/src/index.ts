@@ -12,6 +12,7 @@ export default defineEndpoint((router) => {
 			// TODO create stripe headers signature verification
 			if (data?.type === 'checkout.session.completed' && status === 'complete') {
 				// get name and email and add subscriber to mailerlite
+				console.log("checkout.session.completed___", data?.data.object?.customer_details?.email)
 				if (!process.env.MAILERLITE_API_KEY) {
 					throw "Config err: MAILERLITE_API_KEY missing";
 				}
@@ -22,7 +23,6 @@ export default defineEndpoint((router) => {
 				const mailerlite = new MailerLite({
 					api_key: process.env.MAILERLITE_API_KEY
 				});
-
 
 				const splitName = name.split(' ');
 				const mailerParams = {
@@ -49,7 +49,7 @@ export default defineEndpoint((router) => {
 					type: string
 				}
 				const customFields: MailerLiteCustomField[] = data?.data.object?.custom_fields;
-				const bonusCodeField = customFields?.length > 0 ? customFields.find(c => c.key === 'bonuskoodi') : null;
+				const bonusCodeField = customFields?.length > 0 ? customFields.find(c => c.key === 'bonus') : null;
 				if (bonusCodeField) {
 					const muralValues = ['muurali', 'muraali'];
 					if (bonusCodeField?.text?.value && muralValues.includes(bonusCodeField?.text?.value?.toLowerCase())) {
@@ -70,6 +70,7 @@ export default defineEndpoint((router) => {
 					});
 			} else if (data?.type === 'payment_intent.succeeded' && status === 'succeeded') {
 				const { id, amount, amount_received, receipt_email } = data?.data.object;
+				console.log("payment_intent.succeeded___", receipt_email, process.env.EMAIL_WEBHOOK_URL)
 				// payment successful -> send guide via email endpoint
 				const payloadObject = {
 					payment_id: id,
@@ -84,6 +85,7 @@ export default defineEndpoint((router) => {
 					},
 					body: JSON.stringify(payloadObject),
 				});
+				console.log('emailRes', emailRes);
 				res.send({ received: true });
 			} else {
 				throw "Wrong payload - 403";
