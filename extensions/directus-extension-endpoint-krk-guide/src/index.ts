@@ -151,10 +151,16 @@ export default defineEndpoint((router) => {
 				</p>
 				`,
 			};
-			console.log('transporter options', options)
-			const sendRes = await transporter.sendMail(options);
-			console.log('sendREs options', sendRes)
-			res.send({ sent: true });
+			try {
+				console.log('transporter options', options)
+				const sendRes = await transporter.sendMail(options);
+				console.log('sendRes', sendRes);
+				res.send({ sent: true });
+			} catch (err) {
+				console.error('Email send error:', err);
+				res.status(500).send({ error: 'Email failed', err });
+			}
+			// res.send({ sent: true });
 		} catch (err: any) {
 			console.log('/guide-webhook err:', err)
 			res.send({ received: true, mes: err });
