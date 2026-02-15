@@ -2,7 +2,7 @@
 	"name": "krk-guide",
 	"description": "Stripe webhook + nodemailer email sending",
 	"icon": "extension",
-	"version": "1.2.6",
+	"version": "1.2.7",
 	"keywords": [
 		"directus",
 		"directus-extension",
