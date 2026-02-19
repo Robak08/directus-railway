@@ -26,7 +26,9 @@ export default defineEndpoint((router) => {
 				if (!process.env.MAILERLITE_API_KEY) {
 					throw "Config err: MAILERLITE_API_KEY missing";
 				}
-				const { email, name } = data?.data.object?.customer_details;
+				const customerDetails = data?.data?.object?.customer_details;
+				const email = customerDetails?.email;
+				const name = customerDetails?.name;
 				const buyersGroupId = "156806631449953435"; // guidebook sending group
 				const krakowTipsGroupId = "145957335472276790";
 				const muralsGroupId = '167510330590627092';
@@ -34,12 +36,18 @@ export default defineEndpoint((router) => {
 					api_key: process.env.MAILERLITE_API_KEY
 				});
 
-				const splitName = name.split(' ');
+				if (!email) {
+					throw "Missing customer email";
+				}
+
+				const splitName = typeof name === 'string' && name.trim().length > 0
+					? name.trim().split(/\s+/)
+					: [];
 				const mailerParams = {
 					email: email,
 					fields: {
-						name: splitName[0] || null,
-						last_name: splitName[1] || null,
+						name: splitName?.[0] || null,
+						last_name: splitName.length > 1 ? splitName.slice(1).join(' ') : null,
 					},
 					groups: [buyersGroupId, krakowTipsGroupId],
 					status: "active",
