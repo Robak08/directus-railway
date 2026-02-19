@@ -1,5 +1,6 @@
 # Explicitly specify a Directus version to use on Railway
-FROM directus/directus:11.8.0
+# FROM directus/directus:11.8.0
+FROM directus/directus:11.15.4
 
 USER root
 
