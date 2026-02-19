@@ -30,6 +30,7 @@ export default defineEndpoint((router) => {
 				const email = customerDetails?.email;
 				const name = customerDetails?.name;
 				const buyersGroupId = "156806631449953435"; // guidebook sending group
+				const buyersVersionTwoGroupId = "179817636933142402";
 				const krakowTipsGroupId = "145957335472276790";
 				const muralsGroupId = '167510330590627092';
 				const mailerlite = new MailerLite({
@@ -49,7 +50,7 @@ export default defineEndpoint((router) => {
 						name: splitName?.[0] || null,
 						last_name: splitName.length > 1 ? splitName.slice(1).join(' ') : null,
 					},
-					groups: [buyersGroupId, krakowTipsGroupId],
+					groups: [buyersVersionTwoGroupId, buyersGroupId, krakowTipsGroupId],
 					status: "active",
 					subscribed_at: dayjs().subtract(3, "hour").format("YYYY-MM-DD HH:mm:ss"),
 				};
