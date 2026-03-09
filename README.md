@@ -76,4 +76,4 @@ This example runs a [Directus](https://directus.io/) instance with minimal confi
 
 - Inspired and learnt from [https://github.com/freekrai/directus-railway](https://github.com/freekrai/directus-railway) and [https://railway.app/template/postgis](https://railway.app/template/postgis)
 
-## UPDATE directus: 11.16.0
+## UPDATE directus: !11.16.0
