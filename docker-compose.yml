@@ -124,6 +124,10 @@ services:
       EXTENSIONS_AUTO_RELOAD: "true"
       CHOKIDAR_USEPOLLING: true  
       CHOKIDAR_INTERVAL: 2000 # default is 300 milliseconds
+      CORS_ENABLED: "true"
+      CORS_ORIGIN: "https://krakovanopas.fi"
+      CORS_CREDENTIALS: "true"
+      CONTENT_SECURITY_POLICY_DIRECTIVES__FRAME_SRC: "https://krakovanopas.fi"
 
       # Make sure to set this in production
       # (see https://docs.directus.io/self-hosted/config-options#general)
