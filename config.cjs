@@ -1,3 +1,68 @@
+const cspQuotedKeywords = new Set([
+	"none",
+	"self",
+	"strict-dynamic",
+	"report-sample",
+	"inline-speculation-rules",
+	"unsafe-inline",
+	"unsafe-eval",
+	"unsafe-hashes",
+	"wasm-unsafe-eval",
+]);
+
+function normalizeCspDirectiveValue(rawValue) {
+	if (typeof rawValue !== "string") return rawValue;
+
+	const trimmed = rawValue.trim();
+	if (!trimmed) return undefined;
+
+	let tokens = [];
+
+	if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+		try {
+			const parsed = JSON.parse(trimmed);
+			if (Array.isArray(parsed)) {
+				tokens = parsed.filter((entry) => typeof entry === "string");
+			}
+		} catch {
+			// Fall back to plain token parsing below.
+		}
+	}
+
+	if (tokens.length === 0) {
+		tokens = trimmed
+			.replace(/[;,]+/g, " ")
+			.replace(/[\r\n\t]+/g, " ")
+			.split(/\s+/)
+			.filter(Boolean);
+	}
+
+	const normalizedTokens = tokens
+		.map((token) => token.trim().replace(/^"+|"+$/g, ""))
+		.filter(Boolean)
+		.map((token) => {
+			const lower = token.toLowerCase();
+
+			if (cspQuotedKeywords.has(lower)) {
+				return `'${lower}'`;
+			}
+
+			if (/^https?:\/\//i.test(token)) {
+				try {
+					return new URL(token).origin;
+				} catch {
+					return token;
+				}
+			}
+
+			return token;
+		});
+
+	return normalizedTokens.length > 0
+		? normalizedTokens.join(" ")
+		: undefined;
+}
+
 module.exports = function (env) {
 	return {
 		// Railway inputs
@@ -27,6 +92,11 @@ module.exports = function (env) {
 		CORS_ALLOWED_HEADERS: env.CORS_ALLOWED_HEADERS || "*",
 		CORS_EXPOSED_HEADERS: env.CORS_EXPOSED_HEADERS || "*",
 		CORS_METHODS: env.CORS_METHODS || "*",
+		CORS_CREDENTIALS: env.CORS_CREDENTIALS,
+		CONTENT_SECURITY_POLICY_DIRECTIVES__FRAME_SRC:
+			normalizeCspDirectiveValue(
+				env.CONTENT_SECURITY_POLICY_DIRECTIVES__FRAME_SRC
+			),
 		EXTENSIONS_PATH: env.EXTENSIONS_PATH || "./extensions",
 		EMAIL_TEMPLATES_PATH: env.EMAIL_TEMPLATES_PATH || "./templates",
 		MIGRATIONS_PATH: env.MIGRATIONS_PATH || "./migrations",
@@ -59,11 +129,6 @@ module.exports = function (env) {
 		EMAIL_WEBHOOK_URL: env.EMAIL_WEBHOOK_URL,
 		EMAIL_DEVMODE: env.EMAIL_DEVMODE,
 		EMAIL_DEV_USER: env.EMAIL_DEV_USER,
-		MAILERLITE_API_KEY: env.MAILERLITE_API_KEY,
-		CORS_ENABLED: env.CORS_ENABLED,
-		CORS_ORIGIN: env.CORS_ORIGIN,
-		CORS_CREDENTIALS: env.CORS_CREDENTIALS,
-		CONTENT_SECURITY_POLICY_DIRECTIVES__FRAME_SRC:
-			env.CONTENT_SECURITY_POLICY_DIRECTIVES__FRAME_SRC,
+		MAILERLITE_API_KEY: env.MAILERLITE_API_KEY
 	};
 };

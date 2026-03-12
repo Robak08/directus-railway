@@ -37,7 +37,7 @@ services:
       dockerfile: Dockerfile.dev
     # Or use the latest version available on Docker Hub.
     # image: directus/directus:11.12.0
-    image: directus/directus:11.16.0
+    image: directus/directus:11.16.1
     pull_policy: always
     ports:
       - 8055:8055
@@ -87,6 +87,8 @@ services:
       CORS_ALLOWED_HEADERS: ${CORS_ALLOWED_HEADERS}
       CORS_EXPOSED_HEADERS: ${CORS_EXPOSED_HEADERS}
       CORS_METHODS: ${CORS_METHODS}
+      CORS_CREDENTIALS: "true"
+      CONTENT_SECURITY_POLICY_DIRECTIVES__FRAME_SRC: "https://krakovanopas.fi"
 
       EXTENSIONS_PATH: ${EXTENSIONS_PATH}
       EMAIL_TEMPLATES_PATH: ${EMAIL_TEMPLATES_PATH}
@@ -124,10 +126,6 @@ services:
       EXTENSIONS_AUTO_RELOAD: "true"
       CHOKIDAR_USEPOLLING: true  
       CHOKIDAR_INTERVAL: 2000 # default is 300 milliseconds
-      CORS_ENABLED: "true"
-      CORS_ORIGIN: "https://krakovanopas.fi"
-      CORS_CREDENTIALS: "true"
-      CONTENT_SECURITY_POLICY_DIRECTIVES__FRAME_SRC: "https://krakovanopas.fi"
 
       # Make sure to set this in production
       # (see https://docs.directus.io/self-hosted/config-options#general)
