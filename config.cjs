@@ -58,9 +58,7 @@ function normalizeCspDirectiveValue(rawValue) {
 			return token;
 		});
 
-	return normalizedTokens.length > 0
-		? normalizedTokens.join(" ")
-		: undefined;
+	return normalizedTokens.length > 0 ? normalizedTokens.join(" ") : undefined;
 }
 
 module.exports = function (env) {
@@ -93,10 +91,9 @@ module.exports = function (env) {
 		CORS_EXPOSED_HEADERS: env.CORS_EXPOSED_HEADERS || "*",
 		CORS_METHODS: env.CORS_METHODS || "*",
 		CORS_CREDENTIALS: env.CORS_CREDENTIALS,
-		CONTENT_SECURITY_POLICY_DIRECTIVES__FRAME_SRC:
-			normalizeCspDirectiveValue(
-				env.CONTENT_SECURITY_POLICY_DIRECTIVES__FRAME_SRC
-			),
+		CONTENT_SECURITY_POLICY_DIRECTIVES__FRAME_SRC: normalizeCspDirectiveValue(
+			env.CONTENT_SECURITY_POLICY_DIRECTIVES__FRAME_SRC,
+		),
 		EXTENSIONS_PATH: env.EXTENSIONS_PATH || "./extensions",
 		EMAIL_TEMPLATES_PATH: env.EMAIL_TEMPLATES_PATH || "./templates",
 		MIGRATIONS_PATH: env.MIGRATIONS_PATH || "./migrations",
@@ -124,11 +121,17 @@ module.exports = function (env) {
 		EMAIL_SMTP_USER: env.EMAIL_SMTP_USER,
 		EMAIL_SMTP_PASSWORD: env.EMAIL_SMTP_PASSWORD,
 		EMAIL_FROM: env.EMAIL_FROM,
+		EMAIL_VERIFY_SETUP: env.EMAIL_VERIFY_SETUP,
+		EMAIL_SES_CREDENTIALS__ACCESS_KEY_ID:
+			env.EMAIL_SES_CREDENTIALS__ACCESS_KEY_ID,
+		EMAIL_SES_CREDENTIALS__SECRET_ACCESS_KEY:
+			env.EMAIL_SES_CREDENTIALS__SECRET_ACCESS_KEY,
+		EMAIL_SES_REGION: env.EMAIL_SES_REGION,
 		STRIPE_SECRET_KEY: env.STRIPE_SECRET_KEY,
 		STRIPE_VERIFICATION_SECRET: env.STRIPE_VERIFICATION_SECRET,
 		EMAIL_WEBHOOK_URL: env.EMAIL_WEBHOOK_URL,
 		EMAIL_DEVMODE: env.EMAIL_DEVMODE,
 		EMAIL_DEV_USER: env.EMAIL_DEV_USER,
-		MAILERLITE_API_KEY: env.MAILERLITE_API_KEY
+		MAILERLITE_API_KEY: env.MAILERLITE_API_KEY,
 	};
 };
