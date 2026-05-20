@@ -1,0 +1,52 @@
+{
+  "name": "directus-extension-slugify-interface",
+  "version": "1.0.0",
+  "type": "module",
+  "author": {
+    "email": "robert.hamiga@gmail.com",
+    "name": "Robert Hamiga"
+  },
+  "license": "gpl-3.0",
+  "keywords": [
+    "directus",
+    "directus-extension",
+    "directus-custom-interface",
+    "permalink",
+    "slug",
+    "wordpress permalink"
+  ],
+  "directus:extension": {
+    "type": "interface",
+    "path": "dist/index.js",
+    "source": "src/index.ts",
+    "host": "^11.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "directus-extension build",
+    "dev": "directus-extension build --no-minify --watch",
+    "link": "directus-extension link",
+    "validate": "directus-extension validate"
+  },
+  "devDependencies": {
+    "@directus/extensions-sdk": "17.1.4",
+    "@sindresorhus/slugify": "^2.1.0",
+    "directus-codestyle": "dimitrov-adrian/directus-codestyle",
+    "micromustache": "^8.0.3",
+    "typescript": "^6.0.3",
+    "vue": "^3.5.34",
+    "vue-i18n": "^11.4.4"
+  },
+  "prettier": "directus-codestyle/prettier",
+  "stylelint": {
+    "extends": "directus-codestyle/stylelint"
+  },
+  "eslintConfig": {
+    "extends": "./node_modules/directus-codestyle/.eslintrc.js",
+    "parserOptions": {
+      "sourceType": "module"
+    }
+  }
+}
