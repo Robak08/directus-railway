@@ -2,5 +2,5 @@
 
 Email subject hook
 
-Slugify interface plugin updated for directus v11 and included
+Slugify interface plugin updated for directus v12 and included
 
