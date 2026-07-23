@@ -1,3 +1,0 @@
-[submodule "extensions/directus-extension-push-notification"]
-	path = extensions/directus-extension-push-notification
-	url = https://github.com/Robak08/directus-extension-push-notification.git

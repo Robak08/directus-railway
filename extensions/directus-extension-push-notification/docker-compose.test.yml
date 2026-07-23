@@ -1,0 +1,109 @@
+services:
+  directus:
+    image: directus/directus:${DIRECTUS_VERSION:-11.14.1}
+    container_name: directus-push-notification-${TEST_SUITE_ID:-main}-${DIRECTUS_VERSION:-latest}
+    ports:
+      - "0:8055" # Porta dinâmica - Docker escolhe porta livre automaticamente
+    environment:
+      DB_CLIENT: "sqlite3"
+      DB_FILENAME: "/tmp/data/directus.db"
+      KEY: "test-key"
+      SECRET: "test-secret"
+      ADMIN_EMAIL: "admin@example.com"
+      ADMIN_PASSWORD: "test-password-not-a-leak"
+      PUBLIC_URL: "http://directus:8055"
+      STORAGE_LOCAL_ROOT: "/directus/uploads"
+      EXTENSIONS_PATH: "./extensions"
+      EXTENSIONS_AUTO_RELOAD: "true"
+      PERMISSIONS_CACHE_TTL: "0"
+      CACHE_ENABLED: "false"
+      ACCEPT_TERMS: "true"
+      PROJECT_OWNER: "admin@example.com"
+      PRESSURE_LIMITER_ENABLED: "false"
+
+      # VAPID keys must be provided via environment variables
+      # In CI/CD: Generated dynamically before running tests
+      # Locally: Set in .env file (see .env.docker.example)
+      PUSH_PUBLIC_VAPID_KEY: "${PUSH_PUBLIC_VAPID_KEY}"
+      PUSH_PRIVATE_VAPID_KEY: "${PUSH_PRIVATE_VAPID_KEY}"
+      PUSH_VAPID_SUBJECT: "${PUSH_VAPID_SUBJECT:-mailto:test@example.com}"
+
+      # Aceitar certificados autoassinados do mock-push-server (necessário para webpush via HTTPS)
+      NODE_TLS_REJECT_UNAUTHORIZED: "0"
+
+      # Melhorar performance de inicialização
+      LOG_LEVEL: "warn"
+      DB_POOL_MIN: "0"
+      DB_POOL_MAX: "5"
+    volumes:
+      - ./dist/app.js:/directus/extensions/directus-extension-push-notification/dist/app.js:ro
+      - ./dist/api.js:/directus/extensions/directus-extension-push-notification/dist/api.js:ro
+      - ./package.json:/directus/extensions/directus-extension-push-notification/package.json:ro
+      - ./dist/directus-state.json:/directus/extensions/directus-extension-push-notification/dist/directus-state.json:ro
+      - ./dist/service-worker.js:/directus/extensions/directus-extension-push-notification/dist/service-worker.js:ro
+    tmpfs:
+      - /directus/uploads:rw,noexec,nosuid,size=64M,mode=777 # Usa memória temporária para uploads com permissões adequadas
+      - /tmp/data:rw,size=64M,mode=777 # Usa memória temporária para o banco de dados
+    networks:
+      - push-notification-directus-test-network
+    healthcheck:
+      test:
+        - CMD
+        - sh
+        - -c
+        - |
+          wget --no-verbose --tries=1 --spider http://0.0.0.0:8055/server/health
+      interval: 5s
+      timeout: 10s
+      retries: 50
+      start_period: 60s
+
+  tests:
+    image: mcr.microsoft.com/playwright:v1.57.0
+    container_name: directus-push-notification-tests-${TEST_SUITE_ID:-main}-${DIRECTUS_VERSION:-latest}
+    environment:
+      - CI=true
+      - DIRECTUS_URL=http://directus:8055
+      - MOCK_PUSH_SERVER_URL=https://mock-push-server:8080
+      - MOCK_PUSH_ENDPOINT_BASE=https://mock-push-server:8080
+    depends_on:
+      directus:
+        condition: service_healthy
+      mock-push-server:
+        condition: service_healthy
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace:rw
+      - /dev/shm:/dev/shm
+    networks:
+      - push-notification-directus-test-network
+    command:
+      - bash
+      - -lc
+      - |
+        npm i -g pnpm@10.29.2 && \
+        pnpm install --frozen-lockfile && \
+        pnpm exec playwright install --with-deps && \
+        pnpm test:e2e
+
+  mock-push-server:
+    image: node:20-alpine
+    container_name: directus-push-notification-mock-${TEST_SUITE_ID:-main}-${DIRECTUS_VERSION:-latest}
+    ports:
+      - "0:8080"
+    volumes:
+      - ./tests/mock-push-server.js:/app/mock-push-server.js:ro
+    command: sh -c "apk add --no-cache openssl curl && node /app/mock-push-server.js"
+    networks:
+      - push-notification-directus-test-network
+    healthcheck:
+      test: ["CMD", "curl", "-k", "-s", "-f", "https://localhost:8080/health"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 15s
+
+networks:
+  push-notification-directus-test-network:
+    driver: bridge
+    name: directus-push-notification-test-${TEST_SUITE_ID:-main}-${DIRECTUS_VERSION:-latest}

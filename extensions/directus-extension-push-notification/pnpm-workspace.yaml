@@ -1,0 +1,13 @@
+packages:
+  - "packages/*"
+
+onlyBuiltDependencies:
+  - "@opentask/taskin-file-system-provider"
+  - "@opentask/taskin-task-server-mcp"
+  - esbuild
+  - taskin
+  - vue-demi
+
+overrides:
+  axios@<=1.13.4: ">=1.13.5"
+  lodash-es@>=4.0.0 <=4.17.22: ">=4.17.23"

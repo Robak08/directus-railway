@@ -1,0 +1,172 @@
+{
+  "name": "directus-extension-push-notification",
+  "description": "Complete push notification system for Directus with multi-device support, delivery tracking, 46 languages, and service worker integration",
+  "icon": "extension",
+  "private": false,
+  "version": "0.5.3",
+  "type": "module",
+  "keywords": [
+    "directus",
+    "directus-extension",
+    "directus-custom-bundle",
+    "directus-hook",
+    "directus-endpoint",
+    "push-notification",
+    "push-notifications",
+    "web-push",
+    "notifications",
+    "vapid",
+    "service-worker",
+    "pwa",
+    "progressive-web-app",
+    "multi-device",
+    "delivery-tracking",
+    "fcm",
+    "browser-notifications",
+    "real-time",
+    "translations",
+    "multilingual"
+  ],
+  "files": [
+    "dist/**/*",
+    "package.json",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md"
+  ],
+  "directus:extension": {
+    "host": "^10.0.0 || ^11.0.0 || ^12.0.0",
+    "type": "bundle",
+    "path": {
+      "app": "dist/app.js",
+      "api": "dist/api.js"
+    },
+    "entries": [
+      {
+        "type": "endpoint",
+        "name": "push-notification",
+        "source": "src/push-notification/index.ts"
+      },
+      {
+        "type": "endpoint",
+        "name": "push-notification-sw",
+        "source": "src/push-notification-sw/index.ts"
+      },
+      {
+        "type": "endpoint",
+        "name": "push-client-script",
+        "source": "src/push-client-script/index.ts"
+      },
+      {
+        "type": "endpoint",
+        "name": "mock-push-server",
+        "source": "src/mock-push-server/index.ts"
+      },
+      {
+        "type": "hook",
+        "name": "db-configuration",
+        "source": "src/db-configuration/index.ts"
+      },
+      {
+        "type": "hook",
+        "name": "notification-trigger",
+        "source": "src/notification-trigger/index.ts"
+      },
+      {
+        "type": "hook",
+        "name": "broadcast-processor",
+        "source": "src/broadcast-processor/index.ts"
+      },
+      {
+        "type": "hook",
+        "name": "push-subscription-frontend",
+        "source": "src/push-subscription-frontend/index.ts"
+      }
+    ]
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devix-tecnologia/directus-extension-push-notification.git"
+  },
+  "scripts": {
+    "build": "directus-extension build",
+    "dev": "directus-extension build -w --no-minify",
+    "link": "directus-extension link",
+    "validate": "directus-extension validate",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "postbuild": "node scripts/build-postbuild.js",
+    "add-extension": "directus-extension add",
+    "generate:vapid": "node scripts/generate-test-vapid-keys.js",
+    "docker:start": "node scripts/docker-start.js",
+    "docker:stop": "node scripts/docker-stop.js",
+    "docker:clear": "node scripts/docker-clear.js",
+    "test:setup": "node scripts/generate-test-vapid-keys.js",
+    "test": "pnpm test:e2e",
+    "test:integration:env-up": "docker-compose --env-file .env.test -f docker-compose.test.yml up -d --wait",
+    "test:integration:env-down": "docker-compose -f docker-compose.test.yml down",
+    "test:integration:run": "vitest run tests/integration",
+    "test:integration": "pnpm run test:integration:run",
+    "test:integration:watch": "vitest tests/integration",
+    "test:integration:ci": "sh -c 'pnpm run test:setup && pnpm run test:integration:env-up && pnpm run test:integration:run; EXIT_CODE=$?; pnpm run test:integration:env-down; exit $EXIT_CODE'",
+    "test:watch": "vitest",
+    "test:e2e": "VERBOSE=true node tests/run-e2e.js",
+    "test:e2e:ui": "VERBOSE=true node tests/run-e2e.js --ui",
+    "test:e2e:clean": "rm -rf test-results playwright-report 2>/dev/null || true",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report",
+    "semantic-release": "semantic-release"
+  },
+  "devDependencies": {
+    "@directus/extensions-sdk": "18.0.1",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.58.2",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.6",
+    "@semantic-release/npm": "^13.1.4",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.3.2",
+    "@types/web-push": "^3.6.4",
+    "axios": "^1.13.6",
+    "dotenv": "^17.3.1",
+    "esbuild": "^0.28.1",
+    "eslint": "^10.0.2",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.3.0",
+    "prettier": "^3.8.1",
+    "semantic-release": "^25.0.3",
+    "taskin": "^2.3.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1",
+    "vitest": "^4.0.18"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  },
+  "packageManager": "pnpm@10.29.2",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "author": "Devix Tecnologia",
+  "contributors": [
+    {
+      "name": "Sidarta Veloso",
+      "github": "https://github.com/sidartaveloso",
+      "linkedin": "https://www.linkedin.com/in/sidartaveloso"
+    }
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/devix-tecnologia/directus-extension-push-notification/issues"
+  },
+  "homepage": "https://github.com/devix-tecnologia/directus-extension-push-notification#readme"
+}

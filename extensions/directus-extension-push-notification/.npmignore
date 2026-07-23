@@ -1,0 +1,42 @@
+# macOS
+.DS_Store
+
+# Dependencies
+node_modules
+
+# Development files
+src/
+tests/
+test-results/
+test-user-data-dir/
+playwright-report/
+
+# Docker & CI
+docker-compose*.yml
+.dockerignore
+
+# Environment files
+.env*
+!.env.docker.example
+
+# Build & Config
+tsconfig.json
+vitest.config.ts
+playwright.config.cjs
+eslint.config.js
+pnpm-workspace.yaml
+
+# Documentation & Tasks
+TASKS/
+CONTRIBUTING.md
+assets/
+
+# Backups & temp
+*.backup
+*.tmp
+*.log
+
+# Git
+.git
+.gitignore
+.gitattributes

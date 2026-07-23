@@ -1,0 +1,75 @@
+services:
+  directus:
+    image: directus/directus:11.15.1
+    container_name: directus-push-notification-dev
+    environment:
+      # SQLite em memória para desenvolvimento rápido
+      DB_CLIENT: "sqlite3"
+      DB_FILENAME: "/tmp/data/directus.db"
+
+      # ⚠️⚠️⚠️ DEVELOPMENT ONLY - DO NOT USE IN PRODUCTION ⚠️⚠️⚠️
+      # These credentials are intentionally simple for local development.
+      # In production, ALWAYS generate secure random values:
+      #   KEY: openssl rand -hex 16
+      #   SECRET: openssl rand -base64 32
+      KEY: "${DIRECTUS_KEY:-dev-key}"
+      SECRET: "${DIRECTUS_SECRET:-dev-secret-abcdef1234567890abcdef1234567890}"
+
+      ADMIN_EMAIL: "${ADMIN_EMAIL:-admin@example.com}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-test-password-not-a-leak}"
+
+      PUBLIC_URL: "http://localhost:8055"
+
+      STORAGE_LOCAL_ROOT: "/directus/uploads"
+      EXTENSIONS_PATH: "./extensions"
+      EXTENSIONS_AUTO_RELOAD: "true"
+
+      PERMISSIONS_CACHE_TTL: "0"
+      CACHE_ENABLED: "false"
+
+      ACCEPT_TERMS: "true"
+      PROJECT_OWNER: "admin@example.com"
+
+      # 🔑 VAPID KEYS - REQUIRED FOR PUSH NOTIFICATIONS
+      # Generate your own unique keys: npx web-push generate-vapid-keys
+      # Then set them in your .env file or environment:
+      #   PUSH_PUBLIC_VAPID_KEY=your_public_key_here
+      #   PUSH_PRIVATE_VAPID_KEY=your_private_key_here
+      PUSH_PUBLIC_VAPID_KEY: "${PUSH_PUBLIC_VAPID_KEY}"
+      PUSH_PRIVATE_VAPID_KEY: "${PUSH_PRIVATE_VAPID_KEY}"
+
+      # VAPID Subject (opcional) - identificação do servidor de push
+      # Em produção, use: PUSH_VAPID_SUBJECT: "https://seusite.com" ou "mailto:contato@seusite.com"
+      # Se não definido, usa PUBLIC_URL (se for https://) ou fallback para mailto:
+      # PUSH_VAPID_SUBJECT: "mailto:admin@example.com"
+
+    ports:
+      - 8055:8055
+
+    volumes:
+      - ./dist/app.js:/directus/extensions/directus-extension-push-notification/dist/app.js:ro
+      - ./dist/api.js:/directus/extensions/directus-extension-push-notification/dist/api.js:ro
+      - ./package.json:/directus/extensions/directus-extension-push-notification/package.json:ro
+      - ./dist/directus-state.json:/directus/extensions/directus-extension-push-notification/dist/directus-state.json:ro
+      - ./dist/service-worker.js:/directus/extensions/directus-extension-push-notification/dist/service-worker.js:ro
+
+    tmpfs:
+      - /directus/uploads:rw,noexec,nosuid,size=64M,mode=777
+      - /tmp/data:rw,size=64M,mode=777
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://0.0.0.0:8055/server/health",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 120s
+
+    restart: unless-stopped
