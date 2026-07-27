@@ -23,6 +23,8 @@ async function main() {
 	let client;
 	let workDir;
 
+	log("info", "Backup container starting");
+
 	try {
 		config = loadConfig();
 		backupId = createBackupId();

@@ -131,7 +131,8 @@ Git push **only** redeploys services that already exist. The backup worker is a 
 5. **Variables** on **this service only** (use backup IAM keys, not Directus production keys):
 
    ```env
-   DB_CONNECTION_STRING=<Railway Postgres URL — use variable reference to Postgres if available>
+   DB_CONNECTION_STRING=${{Postgres.DATABASE_URL}}
+   # or set DATABASE_URL to the same reference — either name works
    STORAGE_S3_BUCKET=krakovan-opas
    BACKUP_S3_BUCKET=krakovanopas-bckp
    STORAGE_S3_KEY=<backup IAM access key>
@@ -162,6 +163,22 @@ Both services must be linked to the repo; Railway will not add the backup servic
 - The process must **exit** when done (no HTTP server).
 - If a run is still active when the next cron fires, Railway **skips** the new run.
 - Schedules are evaluated in **UTC**.
+
+### Troubleshooting “Crashed” deployments
+
+**Build logs are not deploy logs.** A successful image build (like your `npm ci` / `image push` output) only means the Docker image was built. Open **Deployments → latest → View logs** (runtime) for JSON lines such as `Backup run failed`.
+
+| Symptom | Likely cause | What to do |
+|---------|----------------|------------|
+| Red **Crashed** right after start, log shows `Missing required environment variable` | DB or S3 vars not set on **backup-cron** | Add all variables from step 5; use `${{Postgres.DATABASE_URL}}` as `DB_CONNECTION_STRING` or `DATABASE_URL` |
+| `pg_dump exited with code 1` / SSL / connection refused | Postgres URL or network | Use Railway Postgres **private** URL if both services are in the same project; ensure `sslmode=require` (set automatically unless your URL already has `sslmode`) |
+| `Backup run completed` then service shows **Crashed** with exit **0** | Normal for a one-shot job | Set **Cron Schedule** — the container is supposed to exit. Between cron runs the service is idle, not a long-running web process |
+| Crash loop (restarts every few seconds) | Exit code **1** (real failure) | Read the `error` field in deploy logs; check S3 IAM policy and bucket names |
+| S3 `AccessDenied` | Wrong IAM key or policy | Backup service must use **backup IAM** keys; bucket names `krakovan-opas` / `krakovanopas-bckp` |
+
+**Public networking** is not required for this service (no HTTP port). Outbound access to Postgres and AWS S3 is enough.
+
+Do **not** assign a public domain or expect a health check on `PORT` — this is not a web service.
 
 ---
 
@@ -194,7 +211,8 @@ s3://krakovanopas-bckp/<backupId>/
 
 | Variable | Required | Example / default |
 |----------|----------|-------------------|
-| `DB_CONNECTION_STRING` | yes | Railway Postgres URL |
+| `DB_CONNECTION_STRING` | yes* | Railway Postgres URL |
+| `DATABASE_URL` | yes* | Same as above (Railway default name; either variable works) |
 | `STORAGE_S3_BUCKET` | yes | `krakovan-opas` |
 | `BACKUP_S3_BUCKET` | yes | `krakovanopas-bckp` |
 | `STORAGE_S3_KEY` | yes | Backup IAM access key |
@@ -203,6 +221,8 @@ s3://krakovanopas-bckp/<backupId>/
 | `STORAGE_S3_ENDPOINT` | yes | `s3.amazonaws.com` |
 | `BACKUP_RETENTION_DAYS` | no | `30` |
 | `BACKUP_FILES_ENABLED` | no | `true` |
+
+\* Set at least one of `DB_CONNECTION_STRING` or `DATABASE_URL`.
 
 Copy [`.env.example`](.env.example) to `.env` for local runs (do not commit `.env`).
 

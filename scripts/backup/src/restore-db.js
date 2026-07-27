@@ -50,6 +50,16 @@ async function main() {
 
 		log("info", "Running pg_restore (stop Directus first)", { backupId });
 
+		const pgEnv = { ...process.env };
+		const dbConnectionString = config.dbConnectionString;
+		if (
+			!dbConnectionString.includes("sslmode=") &&
+			!pgEnv.PGSSLMODE &&
+			!pgEnv.PGSSLCERT
+		) {
+			pgEnv.PGSSLMODE = "require";
+		}
+
 		await new Promise((resolve, reject) => {
 			const child = spawn(
 				"pg_restore",
@@ -58,10 +68,10 @@ async function main() {
 					"--if-exists",
 					"--no-owner",
 					"--no-acl",
-					`--dbname=${config.dbConnectionString}`,
+					`--dbname=${dbConnectionString}`,
 					dumpPath,
 				],
-				{ stdio: ["ignore", "pipe", "pipe"] },
+				{ stdio: ["ignore", "pipe", "pipe"], env: pgEnv },
 			);
 
 			let stderr = "";

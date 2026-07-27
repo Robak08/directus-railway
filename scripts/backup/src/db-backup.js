@@ -15,11 +15,20 @@ export async function runDatabaseBackup({
 
 	log("info", "Starting database backup", { backupId });
 
+	const pgEnv = { ...process.env };
+	if (
+		!dbConnectionString.includes("sslmode=") &&
+		!pgEnv.PGSSLMODE &&
+		!pgEnv.PGSSLCERT
+	) {
+		pgEnv.PGSSLMODE = "require";
+	}
+
 	await new Promise((resolve, reject) => {
 		const child = spawn(
 			"pg_dump",
 			["--format=custom", "--no-owner", "--no-acl", `--file=${dumpPath}`, dbConnectionString],
-			{ stdio: ["ignore", "pipe", "pipe"] },
+			{ stdio: ["ignore", "pipe", "pipe"], env: pgEnv },
 		);
 
 		let stderr = "";

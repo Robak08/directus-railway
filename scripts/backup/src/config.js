@@ -27,8 +27,18 @@ function requireEnv(name) {
 	return String(value).trim();
 }
 
+function loadDbConnectionString() {
+	const direct = process.env.DB_CONNECTION_STRING?.trim();
+	if (direct) return direct;
+	const databaseUrl = process.env.DATABASE_URL?.trim();
+	if (databaseUrl) return databaseUrl;
+	throw new Error(
+		"Missing required environment variable: DB_CONNECTION_STRING (or DATABASE_URL)",
+	);
+}
+
 export function loadConfig() {
-	const dbConnectionString = requireEnv("DB_CONNECTION_STRING");
+	const dbConnectionString = loadDbConnectionString();
 	const productionBucket = requireEnv("STORAGE_S3_BUCKET");
 	const backupBucket = requireEnv("BACKUP_S3_BUCKET");
 	const accessKeyId = requireEnv("STORAGE_S3_KEY");
