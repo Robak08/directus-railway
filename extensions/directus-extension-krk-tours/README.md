@@ -100,7 +100,7 @@ The **Regions** field is M2M via `tours_places_regions`. Greenfield installs (v1
 
 Scaffold checks `places_regions.id` is `uuid` before creating the junction. If `summary.errors` mentions `tours.regions M2M junction incomplete`, inspect Data Model on `tours_places_regions` or re-run scaffold on a fresh DB.
 
-**Existing DBs** created with integer `places_regions_id` must be fixed manually (column type + M2O); re-scaffold does not alter existing column types.
+**Existing DBs** created with integer `places_regions_id` or missing junction columns must be fixed manually (column type + M2O); re-scaffold will try to **create missing columns** and **recreate empty-table FK columns** as uuid before relations.
 
 ## Development
 

@@ -9,7 +9,8 @@ import {
 import { buildFieldPayloadForCreate } from './scaffold-field-payload.js';
 import { validateToursRegionsJunctionRelations } from './validate-critical-relations.js';
 import { applyTourPermissions } from './permissions.js';
-import { reconcileForeignKeyField } from './reconcile-fk-fields.js';
+import { ensureFieldColumnExists, reconcileForeignKeyField } from './reconcile-fk-fields.js';
+import { repairSchemaFromDatabase } from './sql-schema-repair.js';
 import type {
 	DatabaseLike,
 	DirectusStateField,
@@ -170,8 +171,35 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 	}
 
 	if (relations.length > 0) {
-		const updatedSchema = await getSchema({ database });
+		const sqlRepair = await repairSchemaFromDatabase(database, fields, logger);
+		if (sqlRepair.applied.length > 0) {
+			logger.info(`[krk-tours] SQL schema repairs: ${sqlRepair.applied.join('; ')}`);
+		}
+		for (const repairError of sqlRepair.errors) {
+			summary.errors.push(`SQL repair: ${repairError}`);
+		}
+
+		let updatedSchema = await getSchema({ database });
 		const fieldsServiceForRelations = new FieldsService({
+			knex: database,
+			schema: updatedSchema
+		});
+
+		const physicalFields = fields.filter((field) => field.schema && field.type !== 'alias');
+		for (const field of physicalFields) {
+			const columnError = await ensureFieldColumnExists(
+				fieldsServiceForRelations,
+				database,
+				field,
+				logger
+			);
+			if (columnError) {
+				summary.errors.push(columnError);
+			}
+		}
+
+		updatedSchema = await getSchema({ database });
+		const fieldsServiceAfterColumns = new FieldsService({
 			knex: database,
 			schema: updatedSchema
 		});
@@ -179,7 +207,7 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 		const fkFields = fields.filter((field) => field.schema?.foreign_key_table);
 		for (const field of fkFields) {
 			const fkError = await reconcileForeignKeyField(
-				fieldsServiceForRelations,
+				fieldsServiceAfterColumns,
 				database,
 				field,
 				logger
@@ -189,6 +217,7 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 			}
 		}
 
+		updatedSchema = await getSchema({ database });
 		const relationsService = new RelationsService({
 			knex: database,
 			schema: updatedSchema
