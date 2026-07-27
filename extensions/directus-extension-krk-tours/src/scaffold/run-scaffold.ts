@@ -8,6 +8,7 @@ import {
 } from './relation-helpers.js';
 import { buildFieldPayloadForCreate } from './scaffold-field-payload.js';
 import { reconcileJunctionFieldMeta } from './reconcile-junction-field-meta.js';
+import { reconcileTourStepPlaceDisplayMeta } from './reconcile-tour-step-place-display-meta.js';
 import { reconcileTourCollectionColors } from './reconcile-tour-collection-colors.js';
 import { reconcileHiddenParentFkMeta, reconcileTranslationsInterfaceMeta } from './reconcile-translation-parent-fk-meta.js';
 import { removeGhostNestedJunctions } from './remove-ghost-nested-junction.js';
@@ -15,6 +16,7 @@ import { validateToursRegionsJunctionRelations } from './validate-critical-relat
 import { validateToursRegionsM2mUiGraph } from './validate-m2m-ui-graph.js';
 import { applyTourPermissions } from './permissions.js';
 import { ensureFieldColumnExists, reconcileForeignKeyField } from './reconcile-fk-fields.js';
+import { reconcileRemovedFields, REMOVED_FIELDS } from './reconcile-removed-fields.js';
 import { removeOrphanedTourCollectionMetadata } from './remove-orphaned-tour-collections.js';
 import { repairSchemaFromDatabase } from './sql-schema-repair.js';
 import type {
@@ -36,6 +38,7 @@ type FieldsServiceLike = {
 	readOne: (collection: string, field: string) => Promise<unknown>;
 	createField: (collection: string, data: Record<string, unknown>) => Promise<unknown>;
 	updateField: (collection: string, field: string, data: Record<string, unknown>) => Promise<unknown>;
+	deleteField: (collection: string, field: string) => Promise<void>;
 };
 
 type ScaffoldContext = {
@@ -75,6 +78,7 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 	const summary: ScaffoldSummary = {
 		collectionsCreated: 0,
 		fieldsCreated: 0,
+		fieldsRemoved: [],
 		relationsCreated: 0,
 		relationsRepaired: 0,
 		relationsUnchanged: 0,
@@ -186,6 +190,20 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 					summary.errors.push(message);
 				}
 			}
+		}
+
+		const removedFields = await reconcileRemovedFields(
+			fieldsService,
+			fields,
+			REMOVED_FIELDS,
+			logger
+		);
+		if (removedFields.removed.length > 0) {
+			summary.fieldsRemoved.push(...removedFields.removed);
+			logger.info(`[krk-tours] Removed obsolete fields: ${removedFields.removed.join(', ')}`);
+		}
+		for (const removeError of removedFields.errors) {
+			summary.errors.push(removeError);
 		}
 	}
 
@@ -300,6 +318,27 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 		}
 		for (const metaError of translationsUiMeta.errors) {
 			summary.errors.push(`Translations UI meta: ${metaError}`);
+		}
+
+		updatedSchema = await getSchema({ database });
+		const collectionsServiceForStepDisplay = new CollectionsService({
+			knex: database,
+			schema: updatedSchema
+		});
+		const stepPlaceDisplayMeta = await reconcileTourStepPlaceDisplayMeta(
+			database as DatabaseLike,
+			fieldsServiceForMeta,
+			collectionsServiceForStepDisplay,
+			fields,
+			logger
+		);
+		if (stepPlaceDisplayMeta.repaired.length > 0) {
+			logger.info(
+				`[krk-tours] Tour step place display meta repaired: ${stepPlaceDisplayMeta.repaired.join(', ')}`
+			);
+		}
+		for (const metaError of stepPlaceDisplayMeta.errors) {
+			summary.errors.push(`Tour step display meta: ${metaError}`);
 		}
 
 		updatedSchema = await getSchema({ database });

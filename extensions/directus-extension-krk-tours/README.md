@@ -38,11 +38,15 @@ curl -X POST "$PUBLIC_URL/krk-tours/seed" \
 
 - `tours` — status, image, duration, M2M `regions`, O2M `steps`, translations
 - `tours_translations` — `tours_id`, `languages_code`, `title`, `slug`, `description`
-- `tour_steps` — `tour_id`, `place_id`, `sort`, optional step duration, translations
+- `tour_steps` — `tour_id`, `place_id`, `sort`, translations (per-stop duration comes from linked `places`)
 - `tour_steps_translations` — optional `note` per language
 - `tours_places_regions` — junction to `places_regions`
 
 Walking route geometry is **not** stored in Directus (computed in the app).
+
+Scaffold also adds optional `places.estimated_duration_minutes` (visit duration shown on tour stops).
+
+Studio labels for tour stops use the linked place as `Title - minutes` (`tours.steps`, `tour_steps.place_id`, and `tour_steps` collection display template). Re-run `POST /krk-tours/scaffold` to reconcile those templates on existing instances.
 
 ## Permissions
 
@@ -68,6 +72,7 @@ On **Directus 12** (policy-based access), permissions are copied to **policies**
 - Looks up `places_regions` by slug (`krakova`, `krakow`, …) or title containing “krak”.
 - Uses the first N **published** `places` (sorted by id).
 - Skips tours whose `tours_translations.slug` already exists for `fi-FI`.
+- Does not set per-place visit duration; set `places.estimated_duration_minutes` in Admin if needed.
 
 ## Verify app access
 

@@ -3,6 +3,11 @@ import type { DirectusState } from './types.js';
 /** Studio collection chip color for all krk-tours collections. */
 export const TOUR_COLLECTION_COLOR = '#34B819';
 
+export const TOUR_STEP_PLACE_DISPLAY_TEMPLATE =
+	'{{place_id.title}} - {{place_id.estimated_duration_minutes}}';
+
+export const PLACE_M2O_DISPLAY_TEMPLATE = '{{title}} - {{estimated_duration_minutes}}';
+
 const uuidPk = {
 	name: 'id',
 	data_type: 'uuid',
@@ -99,7 +104,7 @@ export const directusState: DirectusState = {
 				icon: 'place',
 				color: TOUR_COLLECTION_COLOR,
 				note: 'Ordered stops on a tour',
-				display_template: '{{place_id.title}}',
+				display_template: TOUR_STEP_PLACE_DISPLAY_TEMPLATE,
 				hidden: true,
 				singleton: false,
 				sort_field: 'sort',
@@ -334,14 +339,14 @@ export const directusState: DirectusState = {
 				special: ['o2m'],
 				interface: 'list-o2m',
 				options: {
-					template: '{{place_id.title}}',
+					template: TOUR_STEP_PLACE_DISPLAY_TEMPLATE,
 					enableCreate: true,
 					enableSelect: true,
 					enableDelete: true
 				},
 				display: 'related-values',
 				display_options: {
-					template: '{{place_id.title}}'
+					template: TOUR_STEP_PLACE_DISPLAY_TEMPLATE
 				},
 				sort: 7,
 				width: 'full'
@@ -550,8 +555,11 @@ export const directusState: DirectusState = {
 				special: ['m2o'],
 				interface: 'select-dropdown-m2o',
 				display: 'related-values',
+				options: {
+					template: PLACE_M2O_DISPLAY_TEMPLATE
+				},
 				display_options: {
-					template: '{{title}}'
+					template: PLACE_M2O_DISPLAY_TEMPLATE
 				},
 				sort: 3,
 				width: 'full',
@@ -580,27 +588,6 @@ export const directusState: DirectusState = {
 		},
 		{
 			collection: 'tour_steps',
-			field: 'estimated_duration_minutes',
-			type: 'integer',
-			schema: {
-				name: 'estimated_duration_minutes',
-				table: 'tour_steps',
-				data_type: 'integer',
-				is_nullable: true,
-				is_primary_key: false,
-				has_auto_increment: false
-			},
-			meta: {
-				collection: 'tour_steps',
-				field: 'estimated_duration_minutes',
-				interface: 'input',
-				sort: 5,
-				width: 'half',
-				note: 'Optional stop duration in minutes'
-			}
-		},
-		{
-			collection: 'tour_steps',
 			field: 'translations',
 			type: 'alias',
 			schema: null,
@@ -614,7 +601,7 @@ export const directusState: DirectusState = {
 					defaultLanguage: 'fi-FI',
 					userLanguage: false
 				},
-				sort: 6,
+				sort: 5,
 				width: 'full'
 			}
 		},
@@ -752,6 +739,27 @@ export const directusState: DirectusState = {
 				field: 'places_regions_id',
 				hidden: true,
 				sort: 3
+			}
+		},
+		{
+			collection: 'places',
+			field: 'estimated_duration_minutes',
+			type: 'integer',
+			schema: {
+				name: 'estimated_duration_minutes',
+				table: 'places',
+				data_type: 'integer',
+				is_nullable: true,
+				is_primary_key: false,
+				has_auto_increment: false
+			},
+			meta: {
+				collection: 'places',
+				field: 'estimated_duration_minutes',
+				interface: 'input',
+				sort: 50,
+				width: 'half',
+				note: 'Valinnainen vierailun kesto minuutteina (näytetään kierroksilla)'
 			}
 		}
 	],

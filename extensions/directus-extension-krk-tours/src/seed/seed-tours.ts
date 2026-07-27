@@ -164,8 +164,7 @@ export async function seedTours(context: SeedContext): Promise<SeedSummary> {
 				const stepId = (await tourStepsService.createOne({
 					tour_id: tourId,
 					place_id: placeId,
-					sort: index + 1,
-					estimated_duration_minutes: 15
+					sort: index + 1
 				})) as number;
 
 				await stepTranslationsService.createOne({

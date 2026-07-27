@@ -70,7 +70,7 @@
 				"icon": "place",
 				"color": "#34B819",
 				"note": "Ordered stops on a tour",
-				"display_template": "{{place_id.title}}",
+				"display_template": "{{place_id.title}} - {{place_id.estimated_duration_minutes}}",
 				"hidden": true,
 				"singleton": false,
 				"sort_field": "sort",
@@ -350,14 +350,14 @@
 				],
 				"interface": "list-o2m",
 				"options": {
-					"template": "{{place_id.title}}",
+					"template": "{{place_id.title}} - {{place_id.estimated_duration_minutes}}",
 					"enableCreate": true,
 					"enableSelect": true,
 					"enableDelete": true
 				},
 				"display": "related-values",
 				"display_options": {
-					"template": "{{place_id.title}}"
+					"template": "{{place_id.title}} - {{place_id.estimated_duration_minutes}}"
 				},
 				"sort": 7,
 				"width": "full"
@@ -599,8 +599,11 @@
 				],
 				"interface": "select-dropdown-m2o",
 				"display": "related-values",
+				"options": {
+					"template": "{{title}} - {{estimated_duration_minutes}}"
+				},
 				"display_options": {
-					"template": "{{title}}"
+					"template": "{{title}} - {{estimated_duration_minutes}}"
 				},
 				"sort": 3,
 				"width": "full",
@@ -629,27 +632,6 @@
 		},
 		{
 			"collection": "tour_steps",
-			"field": "estimated_duration_minutes",
-			"type": "integer",
-			"schema": {
-				"name": "estimated_duration_minutes",
-				"table": "tour_steps",
-				"data_type": "integer",
-				"is_nullable": true,
-				"is_primary_key": false,
-				"has_auto_increment": false
-			},
-			"meta": {
-				"collection": "tour_steps",
-				"field": "estimated_duration_minutes",
-				"interface": "input",
-				"sort": 5,
-				"width": "half",
-				"note": "Optional stop duration in minutes"
-			}
-		},
-		{
-			"collection": "tour_steps",
 			"field": "translations",
 			"type": "alias",
 			"schema": null,
@@ -665,7 +647,7 @@
 					"defaultLanguage": "fi-FI",
 					"userLanguage": false
 				},
-				"sort": 6,
+				"sort": 5,
 				"width": "full"
 			}
 		},
@@ -829,6 +811,27 @@
 				"field": "places_regions_id",
 				"hidden": true,
 				"sort": 3
+			}
+		},
+		{
+			"collection": "places",
+			"field": "estimated_duration_minutes",
+			"type": "integer",
+			"schema": {
+				"name": "estimated_duration_minutes",
+				"table": "places",
+				"data_type": "integer",
+				"is_nullable": true,
+				"is_primary_key": false,
+				"has_auto_increment": false
+			},
+			"meta": {
+				"collection": "places",
+				"field": "estimated_duration_minutes",
+				"interface": "input",
+				"sort": 50,
+				"width": "half",
+				"note": "Valinnainen vierailun kesto minuutteina (näytetään kierroksilla)"
 			}
 		}
 	],

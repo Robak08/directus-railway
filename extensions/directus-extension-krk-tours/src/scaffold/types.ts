@@ -44,6 +44,7 @@ export type ScaffoldLogger = {
 export type ScaffoldSummary = {
 	collectionsCreated: number;
 	fieldsCreated: number;
+	fieldsRemoved: string[];
 	relationsCreated: number;
 	relationsRepaired: number;
 	relationsUnchanged: number;
