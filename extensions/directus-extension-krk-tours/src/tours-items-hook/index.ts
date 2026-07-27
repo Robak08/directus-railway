@@ -1,14 +1,14 @@
 import { defineHook } from '@directus/extensions-sdk';
 import {
-	injectTourIdOnNestedSteps,
-	type TourPayloadWithSteps
-} from './inject-tour-id-on-nested-steps.js';
+	normalizeTourSavePayload,
+	normalizeTourStepItemPayload
+} from './normalize-tour-save-payload.js';
 
 type FilterMeta = {
 	keys?: string[];
 };
 
-function resolveTourId(payload: TourPayloadWithSteps, meta: FilterMeta): string | undefined {
+function resolveTourId(payload: Record<string, unknown>, meta: FilterMeta): string | undefined {
 	const key = meta.keys?.[0];
 	if (typeof key === 'string' && key.length > 0) {
 		return key;
@@ -18,11 +18,22 @@ function resolveTourId(payload: TourPayloadWithSteps, meta: FilterMeta): string 
 }
 
 export default defineHook(({ filter }) => {
-	const apply = (payload: TourPayloadWithSteps, meta: FilterMeta) => {
+	const applyTour = (payload: Record<string, unknown>, meta: FilterMeta) => {
 		const tourId = resolveTourId(payload, meta);
-		return injectTourIdOnNestedSteps(payload, tourId);
+		return normalizeTourSavePayload(payload, tourId);
 	};
 
-	filter('tours.items.create', (payload, meta) => apply(payload as TourPayloadWithSteps, meta));
-	filter('tours.items.update', (payload, meta) => apply(payload as TourPayloadWithSteps, meta));
+	filter('tours.items.create', (payload, meta) =>
+		applyTour(payload as Record<string, unknown>, meta)
+	);
+	filter('tours.items.update', (payload, meta) =>
+		applyTour(payload as Record<string, unknown>, meta)
+	);
+
+	filter('tour_steps.items.create', (payload) =>
+		normalizeTourStepItemPayload(payload as Record<string, unknown>)
+	);
+	filter('tour_steps.items.update', (payload) =>
+		normalizeTourStepItemPayload(payload as Record<string, unknown>)
+	);
 });

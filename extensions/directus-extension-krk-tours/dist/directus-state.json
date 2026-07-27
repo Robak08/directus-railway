@@ -319,14 +319,14 @@
 					"languageField": "languages_code",
 					"languageDirectionField": "direction",
 					"defaultLanguage": "fi-FI",
-					"userLanguage": true
+					"userLanguage": false
 				},
 				"display": "translations",
 				"display_options": {
 					"template": "{{title}}",
 					"languageField": "languages_code",
 					"defaultLanguage": "fi-FI",
-					"userLanguage": true
+					"userLanguage": false
 				},
 				"sort": 6,
 				"width": "full"
@@ -424,7 +424,11 @@
 			"meta": {
 				"collection": "tours_translations",
 				"field": "tours_id",
+				"special": [
+					"m2o"
+				],
 				"hidden": true,
+				"required": false,
 				"sort": 2
 			}
 		},
@@ -446,6 +450,9 @@
 			"meta": {
 				"collection": "tours_translations",
 				"field": "languages_code",
+				"special": [
+					"m2o"
+				],
 				"hidden": true,
 				"sort": 3
 			}
@@ -560,6 +567,7 @@
 					"m2o"
 				],
 				"hidden": true,
+				"required": false,
 				"sort": 2
 			}
 		},
@@ -649,7 +657,7 @@
 				"options": {
 					"languageField": "languages_code",
 					"defaultLanguage": "fi-FI",
-					"userLanguage": true
+					"userLanguage": false
 				},
 				"sort": 6,
 				"width": "full"
@@ -697,7 +705,11 @@
 			"meta": {
 				"collection": "tour_steps_translations",
 				"field": "tour_steps_id",
+				"special": [
+					"m2o"
+				],
 				"hidden": true,
+				"required": false,
 				"sort": 2
 			}
 		},
@@ -719,6 +731,9 @@
 			"meta": {
 				"collection": "tour_steps_translations",
 				"field": "languages_code",
+				"special": [
+					"m2o"
+				],
 				"hidden": true,
 				"sort": 3
 			}

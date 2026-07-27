@@ -302,14 +302,14 @@ export const directusState: DirectusState = {
 					languageField: 'languages_code',
 					languageDirectionField: 'direction',
 					defaultLanguage: 'fi-FI',
-					userLanguage: true
+					userLanguage: false
 				},
 				display: 'translations',
 				display_options: {
 					template: '{{title}}',
 					languageField: 'languages_code',
 					defaultLanguage: 'fi-FI',
-					userLanguage: true
+					userLanguage: false
 				},
 				sort: 6,
 				width: 'full'
@@ -391,7 +391,9 @@ export const directusState: DirectusState = {
 			meta: {
 				collection: 'tours_translations',
 				field: 'tours_id',
+				special: ['m2o'],
 				hidden: true,
+				required: false,
 				sort: 2
 			}
 		},
@@ -413,6 +415,7 @@ export const directusState: DirectusState = {
 			meta: {
 				collection: 'tours_translations',
 				field: 'languages_code',
+				special: ['m2o'],
 				hidden: true,
 				sort: 3
 			}
@@ -514,6 +517,7 @@ export const directusState: DirectusState = {
 				field: 'tour_id',
 				special: ['m2o'],
 				hidden: true,
+				required: false,
 				sort: 2
 			}
 		},
@@ -599,7 +603,7 @@ export const directusState: DirectusState = {
 				options: {
 					languageField: 'languages_code',
 					defaultLanguage: 'fi-FI',
-					userLanguage: true
+					userLanguage: false
 				},
 				sort: 6,
 				width: 'full'
@@ -636,7 +640,9 @@ export const directusState: DirectusState = {
 			meta: {
 				collection: 'tour_steps_translations',
 				field: 'tour_steps_id',
+				special: ['m2o'],
 				hidden: true,
+				required: false,
 				sort: 2
 			}
 		},
@@ -658,6 +664,7 @@ export const directusState: DirectusState = {
 			meta: {
 				collection: 'tour_steps_translations',
 				field: 'languages_code',
+				special: ['m2o'],
 				hidden: true,
 				sort: 3
 			}

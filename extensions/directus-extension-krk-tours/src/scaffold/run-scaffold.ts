@@ -8,7 +8,7 @@ import {
 } from './relation-helpers.js';
 import { buildFieldPayloadForCreate } from './scaffold-field-payload.js';
 import { reconcileJunctionFieldMeta } from './reconcile-junction-field-meta.js';
-import { reconcileTourStepTourIdMeta } from './reconcile-tour-step-tour-id-meta.js';
+import { reconcileHiddenParentFkMeta, reconcileTranslationsInterfaceMeta } from './reconcile-translation-parent-fk-meta.js';
 import { removeGhostNestedJunctions } from './remove-ghost-nested-junction.js';
 import { validateToursRegionsJunctionRelations } from './validate-critical-relations.js';
 import { validateToursRegionsM2mUiGraph } from './validate-m2m-ui-graph.js';
@@ -258,16 +258,34 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 			summary.errors.push(`Junction meta: ${metaError}`);
 		}
 
-		const tourIdMetaResult = await reconcileTourStepTourIdMeta(
+		const parentFkMeta = await reconcileHiddenParentFkMeta(
 			database,
 			fieldsServiceForMeta,
 			fields,
 			logger
 		);
-		if (tourIdMetaResult && !tourIdMetaResult.includes(':')) {
-			logger.info(`[krk-tours] Tour step parent FK meta repaired: ${tourIdMetaResult}`);
-		} else if (tourIdMetaResult) {
-			summary.errors.push(`Tour step tour_id meta: ${tourIdMetaResult}`);
+		if (parentFkMeta.repaired.length > 0) {
+			logger.info(
+				`[krk-tours] Hidden parent FK meta repaired: ${parentFkMeta.repaired.join(', ')}`
+			);
+		}
+		for (const metaError of parentFkMeta.errors) {
+			summary.errors.push(`Parent FK meta: ${metaError}`);
+		}
+
+		const translationsUiMeta = await reconcileTranslationsInterfaceMeta(
+			database,
+			fieldsServiceForMeta,
+			fields,
+			logger
+		);
+		if (translationsUiMeta.repaired.length > 0) {
+			logger.info(
+				`[krk-tours] Translations UI meta repaired: ${translationsUiMeta.repaired.join(', ')}`
+			);
+		}
+		for (const metaError of translationsUiMeta.errors) {
+			summary.errors.push(`Translations UI meta: ${metaError}`);
 		}
 
 		updatedSchema = await getSchema({ database });

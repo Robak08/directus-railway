@@ -106,7 +106,30 @@ Scaffold checks `places_regions.id` is `uuid` before creating the junction. If `
 
 ### Studio save: `tour_id: Value can't be null` on `tours`
 
-When editing a tour with nested **Steps**, Directus may send steps without the hidden parent FK `tour_steps.tour_id`. From **v1.0.8+**, the `tours-items` hook injects the parent tour id on `tours.items.create` / `tours.items.update` before validation. Scaffold also reconciles `tour_steps.tour_id` field meta (`hidden`, `special: m2o`). Re-run `POST /krk-tours/scaffold` after upgrade if field meta was wrong.
+When editing a tour with nested **Steps** and **Translations**, Directus Studio may send hidden parent FKs as `null` or use `steps: { create, update, delete }` instead of a flat array. From **v1.0.9+**, the `tours-items` hook normalizes nested `steps`, `translations`, and step-level `translations` on `tours.items.create` / `tours.items.update`, with a fallback on `tour_steps.items.*`. Scaffold reconciles hidden FK meta (`tour_id`, `tours_id`, `tour_steps_id`, `languages_code`) and sets translation UI to **`defaultLanguage: fi-FI`** with **`userLanguage: false`**. Re-run `POST /krk-tours/scaffold` after upgrade.
+
+### Greenfield reset (optional)
+
+Dropping collections alone does **not** fix saves without the extension version above. Use reset only to clear meta drift, then scaffold from a clean slate (**all tour content is lost** until seed):
+
+1. Delete collections in Data Model (child first): `tour_steps_translations` → `tours_translations` → `tour_steps` → `tours_places_regions` → `tours`
+2. Deploy extension **1.0.9+**
+3. `POST /krk-tours/scaffold`
+4. `POST /krk-tours/seed`
+
+Do not drop `places`, `places_regions`, or `languages`.
+
+Equivalent SQL (Postgres, extension tables only):
+
+```sql
+DROP TABLE IF EXISTS tour_steps_translations CASCADE;
+DROP TABLE IF EXISTS tours_translations CASCADE;
+DROP TABLE IF EXISTS tour_steps CASCADE;
+DROP TABLE IF EXISTS tours_places_regions CASCADE;
+DROP TABLE IF EXISTS tours CASCADE;
+```
+
+Then run scaffold and seed as above.
 
 ## Development
 
