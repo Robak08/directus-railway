@@ -8,6 +8,9 @@ const TOUR_COLLECTIONS = [
 	'tours_places_regions'
 ] as const;
 
+/** Translations UI loads system languages when editing tours. */
+const TRANSLATIONS_SUPPORT_COLLECTIONS = ['languages'] as const;
+
 const APP_READ_COLLECTIONS = [...TOUR_COLLECTIONS] as string[];
 
 const EDITOR_ACTIONS = ['create', 'read', 'update', 'delete'] as const;
@@ -180,13 +183,12 @@ async function applyViaRoles(database: PermissionsContext['database'], logger: S
 	let created = 0;
 
 	for (const roleId of appRoleIds) {
-		for (const collection of APP_READ_COLLECTIONS) {
-			const permissions = collection === 'tours' ? { status: { _eq: 'published' } } : null;
+		for (const collection of [...TRANSLATIONS_SUPPORT_COLLECTIONS, ...APP_READ_COLLECTIONS]) {
 			if (
 				await insertRolePermission(database, roleId, {
 					collection,
 					action: 'read',
-					permissions,
+					permissions: collection === 'tours' ? { status: { _eq: 'published' } } : null,
 					fields: '*'
 				})
 			) {
@@ -196,8 +198,11 @@ async function applyViaRoles(database: PermissionsContext['database'], logger: S
 	}
 
 	for (const roleId of editorRoleIds) {
-		for (const collection of TOUR_COLLECTIONS) {
+		for (const collection of [...TRANSLATIONS_SUPPORT_COLLECTIONS, ...TOUR_COLLECTIONS]) {
 			for (const action of EDITOR_ACTIONS) {
+				if (collection === 'languages' && action !== 'read') {
+					continue;
+				}
 				if (
 					await insertRolePermission(database, roleId, {
 						collection,
@@ -242,13 +247,12 @@ async function applyViaPolicies(database: PermissionsContext['database'], logger
 	let created = 0;
 
 	for (const policyId of appPolicyIds) {
-		for (const collection of APP_READ_COLLECTIONS) {
-			const permissions = collection === 'tours' ? { status: { _eq: 'published' } } : null;
+		for (const collection of [...TRANSLATIONS_SUPPORT_COLLECTIONS, ...APP_READ_COLLECTIONS]) {
 			if (
 				await insertPolicyPermission(database, policyId, {
 					collection,
 					action: 'read',
-					permissions,
+					permissions: collection === 'tours' ? { status: { _eq: 'published' } } : null,
 					fields: '*'
 				})
 			) {
@@ -258,8 +262,11 @@ async function applyViaPolicies(database: PermissionsContext['database'], logger
 	}
 
 	for (const policyId of editorPolicyIds) {
-		for (const collection of TOUR_COLLECTIONS) {
+		for (const collection of [...TRANSLATIONS_SUPPORT_COLLECTIONS, ...TOUR_COLLECTIONS]) {
 			for (const action of EDITOR_ACTIONS) {
+				if (collection === 'languages' && action !== 'read') {
+					continue;
+				}
 				if (
 					await insertPolicyPermission(database, policyId, {
 						collection,

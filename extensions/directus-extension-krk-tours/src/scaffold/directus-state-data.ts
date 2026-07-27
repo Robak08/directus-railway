@@ -1,5 +1,8 @@
 import type { DirectusState } from './types.js';
 
+/** Studio collection chip color for all krk-tours collections. */
+export const TOUR_COLLECTION_COLOR = '#34B819';
+
 const uuidPk = {
 	name: 'id',
 	data_type: 'uuid',
@@ -31,6 +34,7 @@ export const directusState: DirectusState = {
 			meta: {
 				collection: 'tours',
 				icon: 'route',
+				color: TOUR_COLLECTION_COLOR,
 				note: 'Guided walking tours (kierrokset)',
 				display_template: '{{translations.title}}',
 				hidden: false,
@@ -65,6 +69,7 @@ export const directusState: DirectusState = {
 			meta: {
 				collection: 'tours_translations',
 				icon: 'import_export',
+				color: TOUR_COLLECTION_COLOR,
 				note: 'Tour title, slug, and description per language',
 				hidden: true,
 				singleton: false,
@@ -92,6 +97,7 @@ export const directusState: DirectusState = {
 			meta: {
 				collection: 'tour_steps',
 				icon: 'place',
+				color: TOUR_COLLECTION_COLOR,
 				note: 'Ordered stops on a tour',
 				display_template: '{{place_id.title}}',
 				hidden: true,
@@ -121,6 +127,7 @@ export const directusState: DirectusState = {
 			meta: {
 				collection: 'tour_steps_translations',
 				icon: 'import_export',
+				color: TOUR_COLLECTION_COLOR,
 				note: 'Optional step notes per language',
 				hidden: true,
 				singleton: false,
@@ -148,6 +155,7 @@ export const directusState: DirectusState = {
 			meta: {
 				collection: 'tours_places_regions',
 				icon: 'import_export',
+				color: TOUR_COLLECTION_COLOR,
 				note: 'Tours tagged with purchasable regions',
 				hidden: true,
 				singleton: false,

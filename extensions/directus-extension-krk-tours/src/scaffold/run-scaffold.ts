@@ -8,6 +8,7 @@ import {
 } from './relation-helpers.js';
 import { buildFieldPayloadForCreate } from './scaffold-field-payload.js';
 import { reconcileJunctionFieldMeta } from './reconcile-junction-field-meta.js';
+import { reconcileTourCollectionColors } from './reconcile-tour-collection-colors.js';
 import { reconcileHiddenParentFkMeta, reconcileTranslationsInterfaceMeta } from './reconcile-translation-parent-fk-meta.js';
 import { removeGhostNestedJunctions } from './remove-ghost-nested-junction.js';
 import { validateToursRegionsJunctionRelations } from './validate-critical-relations.js';
@@ -27,6 +28,7 @@ import type {
 type CollectionsServiceLike = {
 	readOne: (collection: string) => Promise<unknown>;
 	createOne: (data: Record<string, unknown>) => Promise<unknown>;
+	updateOne: (collection: string, data: Record<string, unknown>) => Promise<unknown>;
 	deleteOne: (collection: string) => Promise<unknown>;
 };
 
@@ -335,6 +337,19 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 
 		const uiGraphErrors = await validateToursRegionsM2mUiGraph(database as DatabaseLike, logger);
 		summary.errors.push(...uiGraphErrors);
+	}
+
+	const collectionsServiceForColors = new CollectionsService({
+		knex: database,
+		schema: await getSchema({ database })
+	});
+	const colorRepaired = await reconcileTourCollectionColors(
+		database as DatabaseLike,
+		collectionsServiceForColors,
+		logger
+	);
+	if (colorRepaired.length > 0) {
+		logger.info(`[krk-tours] Collection colors updated: ${colorRepaired.join(', ')}`);
 	}
 
 	try {

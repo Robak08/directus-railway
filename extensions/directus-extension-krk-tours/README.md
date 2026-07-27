@@ -81,6 +81,32 @@ Expect `200` and seeded data after `POST /krk-tours/seed`.
 
 ## Troubleshooting
 
+### Translations: FORBIDDEN on `languages_code` in collection `languages`
+
+The **Translations** field on tours loads the system **`languages`** collection. Editor policies that only received tour collections after scaffold need **`languages` → read** (fields: `code`, `name`, `direction` or `*`).
+
+**Fix now (Admin):** Settings → Access Control → open the policy tied to your Editor role → add **Read** on collection **`languages`** (all fields).
+
+**Fix via scaffold (extension 1.0.11+):** Re-run `POST /krk-tours/scaffold` so permissions copy includes `languages` read for editor/app policies.
+
+If the error persists as **Administrator**, check the `languages_code` relation points at **`languages.code`** (not `languages.id` or a phantom `languages.languages_code`):
+
+```sql
+SELECT r.many_collection, r.many_field, r.one_collection, r.one_field,
+       kcu.column_name, ccu.table_name AS fk_table, ccu.column_name AS fk_column
+FROM directus_relations r
+LEFT JOIN information_schema.key_column_usage kcu
+  ON kcu.table_name = r.many_collection AND kcu.column_name = r.many_field
+LEFT JOIN information_schema.referential_constraints rc
+  ON rc.constraint_name = kcu.constraint_name
+LEFT JOIN information_schema.constraint_column_usage ccu
+  ON ccu.constraint_name = rc.unique_constraint_name
+WHERE r.many_collection IN ('tours_translations', 'tour_steps_translations')
+  AND r.many_field = 'languages_code';
+```
+
+`fk_column` should be **`code`**. Then run `POST /krk-tours/scaffold` to repair relations.
+
 ### Translations: “relationship hasn’t been configured correctly”
 
 Directus may auto-link `languages_code` to `languages.id` instead of **`languages.code`**. From v1.0.1+, run:
