@@ -21,7 +21,7 @@ Expected (in `src/scaffold/directus-state-data.ts`):
 
 Relation repair lives in `src/scaffold/relation-helpers.ts`:
 
-- `readRelationRow` — reads `directus_relations` + `directus_fields` FK columns
+- `readRelationRow` — reads `directus_relations` + Postgres `information_schema` FK targets (Directus 12+)
 - `relationNeedsRepair` — pure compare (unit-tested)
 - `ensureOrRepairRelations` — create, repair via `RelationsService.updateOne`, or skip
 

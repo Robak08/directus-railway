@@ -36,7 +36,7 @@ Production bucket stays `krakovan-opas` (`STORAGE_S3_BUCKET` on Directus).
 ## 2. AWS — IAM user for backup
 
 1. IAM → **Users** → **Create user** (e.g. `krakovanopas-directus-backup`). No console password needed.
-2. **Permissions** → **Create inline policy** → paste **Policy 1** below → name `DirectusBackupCron`.
+2. **Permissions** → **Create inline policy** → **JSON** → paste from [`iam/directus-backup-cron.json`](iam/directus-backup-cron.json) (or below) → name `DirectusBackupCron`.
 3. **Security credentials** → **Create access key** → choose **Application running outside AWS** (Railway).
 4. Save **Access key ID** and **Secret access key** for Railway (backup service only).
 
@@ -172,6 +172,8 @@ Both services must be linked to the repo; Railway will not add the backup servic
 |---------|----------------|------------|
 | Red **Crashed** right after start, log shows `Missing required environment variable` | DB or S3 vars not set on **backup-cron** | Add all variables from step 5; use `${{Postgres.DATABASE_URL}}` as `DB_CONNECTION_STRING` or `DATABASE_URL` |
 | `pg_dump exited with code 1` / SSL / connection refused | Postgres URL or network | Use Railway Postgres **private** URL if both services are in the same project; ensure `sslmode=require` (set automatically unless your URL already has `sslmode`) |
+| `server version mismatch` / `pg_dump version: 16` vs server `17` | Client older than Railway Postgres | Use current `Dockerfile.backup` (`postgresql17-client`); redeploy backup service |
+| `not authorized to perform: s3:PutObject` on `krakovanopas-bckp` | IAM policy missing or wrong bucket in JSON | On user `krakovan-opas-backup-cron`, attach **Policy 1** from below; `Resource` must include `arn:aws:s3:::krakovanopas-bckp` and `arn:aws:s3:::krakovanopas-bckp/*` |
 | `Backup run completed` then service shows **Crashed** with exit **0** | Normal for a one-shot job | Set **Cron Schedule** — the container is supposed to exit. Between cron runs the service is idle, not a long-running web process |
 | Crash loop (restarts every few seconds) | Exit code **1** (real failure) | Read the `error` field in deploy logs; check S3 IAM policy and bucket names |
 | S3 `AccessDenied` | Wrong IAM key or policy | Backup service must use **backup IAM** keys; bucket names `krakovan-opas` / `krakovanopas-bckp` |
