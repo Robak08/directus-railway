@@ -1,0 +1,56 @@
+{
+	"name": "directus-extension-krk-tours",
+	"description": "Scaffold tours (kierrokset) collections, permissions, and sample seed for Krakovan Opas Directus",
+	"icon": "route",
+	"version": "1.0.2",
+	"keywords": [
+		"directus",
+		"directus-extension",
+		"directus-custom-bundle",
+		"tours",
+		"krakovanopas"
+	],
+	"license": "UNLICENSED",
+	"type": "module",
+	"files": [
+		"dist",
+		"README.md"
+	],
+	"directus:extension": {
+		"type": "bundle",
+		"host": "^12.0.0",
+		"path": {
+			"app": "dist/app.js",
+			"api": "dist/api.js"
+		},
+		"entries": [
+			{
+				"type": "hook",
+				"name": "scaffold",
+				"source": "src/scaffold-hook/index.ts"
+			},
+			{
+				"type": "endpoint",
+				"name": "krk-tours",
+				"source": "src/endpoint/index.ts"
+			}
+		]
+	},
+	"scripts": {
+		"prebuild": "pnpm exec tsx scripts/sync-state.ts",
+		"build": "directus-extension build",
+		"dev": "directus-extension build -w --no-minify",
+		"link": "directus-extension link",
+		"validate": "directus-extension validate",
+		"postbuild": "node scripts/copy-state.js",
+		"test": "vitest run",
+		"test:watch": "vitest"
+	},
+	"devDependencies": {
+		"@directus/extensions-sdk": "18.0.1",
+		"@types/node": "^22.15.21",
+		"tsx": "^4.19.4",
+		"typescript": "^5.8.3",
+		"vitest": "^4.1.10"
+	}
+}

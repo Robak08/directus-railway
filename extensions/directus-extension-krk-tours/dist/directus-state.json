@@ -1,0 +1,991 @@
+{
+	"collections": [
+		{
+			"collection": "tours",
+			"meta": {
+				"collection": "tours",
+				"icon": "route",
+				"note": "Guided walking tours (kierrokset)",
+				"display_template": "{{translations.title}}",
+				"hidden": false,
+				"singleton": false,
+				"translations": [
+					{
+						"language": "en-US",
+						"translation": "Tours",
+						"singular": "Tour",
+						"plural": "Tours"
+					},
+					{
+						"language": "fi-FI",
+						"translation": "Kierrokset",
+						"singular": "Kierros",
+						"plural": "Kierrokset"
+					}
+				],
+				"archive_field": "status",
+				"archive_app_filter": true,
+				"archive_value": "archived",
+				"unarchive_value": "published",
+				"sort_field": null,
+				"accountability": "all",
+				"collapse": "open",
+				"versioning": false
+			},
+			"schema": {}
+		},
+		{
+			"collection": "tours_translations",
+			"meta": {
+				"collection": "tours_translations",
+				"icon": "import_export",
+				"note": "Tour title, slug, and description per language",
+				"hidden": true,
+				"singleton": false,
+				"translations": [
+					{
+						"language": "en-US",
+						"translation": "Tour Translations",
+						"singular": "Tour Translation",
+						"plural": "Tour Translations"
+					},
+					{
+						"language": "fi-FI",
+						"translation": "Kierroksen käännökset",
+						"singular": "Käännös",
+						"plural": "Käännökset"
+					}
+				],
+				"accountability": "all",
+				"collapse": "open"
+			},
+			"schema": {}
+		},
+		{
+			"collection": "tour_steps",
+			"meta": {
+				"collection": "tour_steps",
+				"icon": "place",
+				"note": "Ordered stops on a tour",
+				"display_template": "{{place_id.title}}",
+				"hidden": true,
+				"singleton": false,
+				"sort_field": "sort",
+				"translations": [
+					{
+						"language": "en-US",
+						"translation": "Tour Steps",
+						"singular": "Tour Step",
+						"plural": "Tour Steps"
+					},
+					{
+						"language": "fi-FI",
+						"translation": "Kierroksen pysähdykset",
+						"singular": "Pysähdys",
+						"plural": "Pysähdykset"
+					}
+				],
+				"accountability": "all",
+				"collapse": "open"
+			},
+			"schema": {}
+		},
+		{
+			"collection": "tour_steps_translations",
+			"meta": {
+				"collection": "tour_steps_translations",
+				"icon": "import_export",
+				"note": "Optional step notes per language",
+				"hidden": true,
+				"singleton": false,
+				"translations": [
+					{
+						"language": "en-US",
+						"translation": "Step Translations",
+						"singular": "Step Translation",
+						"plural": "Step Translations"
+					},
+					{
+						"language": "fi-FI",
+						"translation": "Pysähdyksen käännökset",
+						"singular": "Käännös",
+						"plural": "Käännökset"
+					}
+				],
+				"accountability": "all",
+				"collapse": "open"
+			},
+			"schema": {}
+		},
+		{
+			"collection": "tours_places_regions",
+			"meta": {
+				"collection": "tours_places_regions",
+				"icon": "import_export",
+				"note": "Tours tagged with purchasable regions",
+				"hidden": true,
+				"singleton": false,
+				"translations": [
+					{
+						"language": "en-US",
+						"translation": "Tour Regions",
+						"singular": "Tour Region",
+						"plural": "Tour Regions"
+					},
+					{
+						"language": "fi-FI",
+						"translation": "Kierroksen alueet",
+						"singular": "Alue",
+						"plural": "Alueet"
+					}
+				],
+				"accountability": "all",
+				"collapse": "open"
+			},
+			"schema": {}
+		}
+	],
+	"fields": [
+		{
+			"collection": "tours",
+			"field": "id",
+			"type": "uuid",
+			"schema": {
+				"name": "id",
+				"data_type": "uuid",
+				"is_nullable": false,
+				"is_primary_key": true,
+				"has_auto_increment": false,
+				"is_unique": false,
+				"is_indexed": false,
+				"foreign_key_column": null,
+				"foreign_key_table": null,
+				"table": "tours"
+			},
+			"meta": {
+				"collection": "tours",
+				"field": "id",
+				"special": [
+					"uuid"
+				],
+				"interface": "input",
+				"readonly": true,
+				"hidden": true,
+				"sort": 1,
+				"width": "full"
+			}
+		},
+		{
+			"collection": "tours",
+			"field": "status",
+			"type": "string",
+			"schema": {
+				"name": "status",
+				"table": "tours",
+				"data_type": "varchar",
+				"max_length": 255,
+				"default_value": "draft",
+				"is_nullable": false,
+				"is_primary_key": false,
+				"has_auto_increment": false
+			},
+			"meta": {
+				"collection": "tours",
+				"field": "status",
+				"interface": "select-dropdown",
+				"options": {
+					"choices": [
+						{
+							"text": "Published",
+							"value": "published"
+						},
+						{
+							"text": "Draft",
+							"value": "draft"
+						},
+						{
+							"text": "Archived",
+							"value": "archived"
+						}
+					]
+				},
+				"display": "labels",
+				"display_options": {
+					"choices": [
+						{
+							"text": "Published",
+							"value": "published",
+							"foreground": "#FFFFFF",
+							"background": "#2ECDA7"
+						},
+						{
+							"text": "Draft",
+							"value": "draft",
+							"foreground": "#18222F",
+							"background": "#D3DAE4"
+						},
+						{
+							"text": "Archived",
+							"value": "archived",
+							"foreground": "#FFFFFF",
+							"background": "#A2B5CD"
+						}
+					]
+				},
+				"sort": 2,
+				"width": "half",
+				"required": true
+			}
+		},
+		{
+			"collection": "tours",
+			"field": "regions",
+			"type": "alias",
+			"schema": null,
+			"meta": {
+				"collection": "tours",
+				"field": "regions",
+				"special": [
+					"m2m"
+				],
+				"interface": "list-m2m",
+				"options": {
+					"template": "{{places_regions_id.title}}"
+				},
+				"sort": 3,
+				"width": "full",
+				"note": "At least one region required when access gating is enabled"
+			}
+		},
+		{
+			"collection": "tours",
+			"field": "estimated_duration_minutes",
+			"type": "integer",
+			"schema": {
+				"name": "estimated_duration_minutes",
+				"table": "tours",
+				"data_type": "integer",
+				"is_nullable": true,
+				"is_primary_key": false,
+				"has_auto_increment": false
+			},
+			"meta": {
+				"collection": "tours",
+				"field": "estimated_duration_minutes",
+				"interface": "input",
+				"sort": 4,
+				"width": "half",
+				"note": "Editorial total duration (minutes), not auto-summed from steps"
+			}
+		},
+		{
+			"collection": "tours",
+			"field": "image",
+			"type": "uuid",
+			"schema": {
+				"name": "image",
+				"table": "tours",
+				"data_type": "uuid",
+				"is_nullable": true,
+				"is_primary_key": false,
+				"has_auto_increment": false,
+				"foreign_key_column": "id",
+				"foreign_key_table": "directus_files"
+			},
+			"meta": {
+				"collection": "tours",
+				"field": "image",
+				"special": [
+					"file"
+				],
+				"interface": "file-image",
+				"sort": 5,
+				"width": "half"
+			}
+		},
+		{
+			"collection": "tours",
+			"field": "translations",
+			"type": "alias",
+			"schema": null,
+			"meta": {
+				"collection": "tours",
+				"field": "translations",
+				"special": [
+					"translations"
+				],
+				"interface": "translations",
+				"options": {
+					"languageField": "languages_code",
+					"languageDirectionField": "direction",
+					"defaultLanguage": "fi-FI",
+					"userLanguage": true
+				},
+				"display": "translations",
+				"display_options": {
+					"template": "{{title}}",
+					"languageField": "languages_code",
+					"defaultLanguage": "fi-FI",
+					"userLanguage": true
+				},
+				"sort": 6,
+				"width": "full"
+			}
+		},
+		{
+			"collection": "tours",
+			"field": "steps",
+			"type": "alias",
+			"schema": null,
+			"meta": {
+				"collection": "tours",
+				"field": "steps",
+				"special": [
+					"o2m"
+				],
+				"interface": "list-o2m",
+				"options": {
+					"template": "{{place_id.title}}",
+					"enableCreate": true,
+					"enableSelect": true
+				},
+				"display": "related-values",
+				"display_options": {
+					"template": "{{place_id.title}}"
+				},
+				"sort": 7,
+				"width": "full"
+			}
+		},
+		{
+			"collection": "tours",
+			"field": "date_updated",
+			"type": "timestamp",
+			"schema": {
+				"name": "date_updated",
+				"table": "tours",
+				"data_type": "timestamp",
+				"is_nullable": true,
+				"is_primary_key": false,
+				"has_auto_increment": false
+			},
+			"meta": {
+				"collection": "tours",
+				"field": "date_updated",
+				"special": [
+					"date-updated",
+					"cast-timestamp"
+				],
+				"interface": "datetime",
+				"readonly": true,
+				"sort": 8,
+				"width": "half"
+			}
+		},
+		{
+			"collection": "tours_translations",
+			"field": "id",
+			"type": "integer",
+			"schema": {
+				"name": "id",
+				"data_type": "integer",
+				"is_nullable": false,
+				"is_primary_key": true,
+				"has_auto_increment": true,
+				"is_unique": false,
+				"is_indexed": false,
+				"foreign_key_column": null,
+				"foreign_key_table": null,
+				"table": "tours_translations"
+			},
+			"meta": {
+				"collection": "tours_translations",
+				"field": "id",
+				"interface": "input",
+				"readonly": true,
+				"hidden": true,
+				"sort": 1
+			}
+		},
+		{
+			"collection": "tours_translations",
+			"field": "tours_id",
+			"type": "uuid",
+			"schema": {
+				"name": "tours_id",
+				"table": "tours_translations",
+				"data_type": "uuid",
+				"is_nullable": false,
+				"is_primary_key": false,
+				"has_auto_increment": false,
+				"foreign_key_column": "id",
+				"foreign_key_table": "tours"
+			},
+			"meta": {
+				"collection": "tours_translations",
+				"field": "tours_id",
+				"hidden": true,
+				"sort": 2
+			}
+		},
+		{
+			"collection": "tours_translations",
+			"field": "languages_code",
+			"type": "string",
+			"schema": {
+				"name": "languages_code",
+				"table": "tours_translations",
+				"data_type": "varchar",
+				"max_length": 10,
+				"is_nullable": false,
+				"is_primary_key": false,
+				"has_auto_increment": false,
+				"foreign_key_column": "code",
+				"foreign_key_table": "languages"
+			},
+			"meta": {
+				"collection": "tours_translations",
+				"field": "languages_code",
+				"hidden": true,
+				"sort": 3
+			}
+		},
+		{
+			"collection": "tours_translations",
+			"field": "title",
+			"type": "string",
+			"schema": {
+				"name": "title",
+				"table": "tours_translations",
+				"data_type": "varchar",
+				"max_length": 255,
+				"is_nullable": false,
+				"is_primary_key": false,
+				"has_auto_increment": false
+			},
+			"meta": {
+				"collection": "tours_translations",
+				"field": "title",
+				"interface": "input",
+				"sort": 4,
+				"width": "full",
+				"required": true
+			}
+		},
+		{
+			"collection": "tours_translations",
+			"field": "slug",
+			"type": "string",
+			"schema": {
+				"name": "slug",
+				"table": "tours_translations",
+				"data_type": "varchar",
+				"max_length": 255,
+				"is_nullable": false,
+				"is_primary_key": false,
+				"has_auto_increment": false
+			},
+			"meta": {
+				"collection": "tours_translations",
+				"field": "slug",
+				"interface": "input",
+				"sort": 5,
+				"width": "full",
+				"required": true
+			}
+		},
+		{
+			"collection": "tours_translations",
+			"field": "description",
+			"type": "text",
+			"schema": {
+				"name": "description",
+				"table": "tours_translations",
+				"data_type": "text",
+				"is_nullable": true,
+				"is_primary_key": false,
+				"has_auto_increment": false
+			},
+			"meta": {
+				"collection": "tours_translations",
+				"field": "description",
+				"interface": "input-rich-text-md",
+				"sort": 6,
+				"width": "full"
+			}
+		},
+		{
+			"collection": "tour_steps",
+			"field": "id",
+			"type": "integer",
+			"schema": {
+				"name": "id",
+				"data_type": "integer",
+				"is_nullable": false,
+				"is_primary_key": true,
+				"has_auto_increment": true,
+				"is_unique": false,
+				"is_indexed": false,
+				"foreign_key_column": null,
+				"foreign_key_table": null,
+				"table": "tour_steps"
+			},
+			"meta": {
+				"collection": "tour_steps",
+				"field": "id",
+				"interface": "input",
+				"readonly": true,
+				"hidden": true,
+				"sort": 1
+			}
+		},
+		{
+			"collection": "tour_steps",
+			"field": "tour_id",
+			"type": "uuid",
+			"schema": {
+				"name": "tour_id",
+				"table": "tour_steps",
+				"data_type": "uuid",
+				"is_nullable": false,
+				"is_primary_key": false,
+				"has_auto_increment": false,
+				"foreign_key_column": "id",
+				"foreign_key_table": "tours"
+			},
+			"meta": {
+				"collection": "tour_steps",
+				"field": "tour_id",
+				"hidden": true,
+				"sort": 2
+			}
+		},
+		{
+			"collection": "tour_steps",
+			"field": "place_id",
+			"type": "integer",
+			"schema": {
+				"name": "place_id",
+				"table": "tour_steps",
+				"data_type": "integer",
+				"is_nullable": false,
+				"is_primary_key": false,
+				"has_auto_increment": false,
+				"foreign_key_column": "id",
+				"foreign_key_table": "places"
+			},
+			"meta": {
+				"collection": "tour_steps",
+				"field": "place_id",
+				"special": [
+					"m2o"
+				],
+				"interface": "select-dropdown-m2o",
+				"display": "related-values",
+				"display_options": {
+					"template": "{{title}}"
+				},
+				"sort": 3,
+				"width": "full",
+				"required": true
+			}
+		},
+		{
+			"collection": "tour_steps",
+			"field": "sort",
+			"type": "integer",
+			"schema": {
+				"name": "sort",
+				"table": "tour_steps",
+				"data_type": "integer",
+				"is_nullable": true,
+				"is_primary_key": false,
+				"has_auto_increment": false
+			},
+			"meta": {
+				"collection": "tour_steps",
+				"field": "sort",
+				"interface": "input",
+				"hidden": true,
+				"sort": 4
+			}
+		},
+		{
+			"collection": "tour_steps",
+			"field": "estimated_duration_minutes",
+			"type": "integer",
+			"schema": {
+				"name": "estimated_duration_minutes",
+				"table": "tour_steps",
+				"data_type": "integer",
+				"is_nullable": true,
+				"is_primary_key": false,
+				"has_auto_increment": false
+			},
+			"meta": {
+				"collection": "tour_steps",
+				"field": "estimated_duration_minutes",
+				"interface": "input",
+				"sort": 5,
+				"width": "half",
+				"note": "Optional stop duration in minutes"
+			}
+		},
+		{
+			"collection": "tour_steps",
+			"field": "translations",
+			"type": "alias",
+			"schema": null,
+			"meta": {
+				"collection": "tour_steps",
+				"field": "translations",
+				"special": [
+					"translations"
+				],
+				"interface": "translations",
+				"options": {
+					"languageField": "languages_code",
+					"defaultLanguage": "fi-FI",
+					"userLanguage": true
+				},
+				"sort": 6,
+				"width": "full"
+			}
+		},
+		{
+			"collection": "tour_steps_translations",
+			"field": "id",
+			"type": "integer",
+			"schema": {
+				"name": "id",
+				"data_type": "integer",
+				"is_nullable": false,
+				"is_primary_key": true,
+				"has_auto_increment": true,
+				"is_unique": false,
+				"is_indexed": false,
+				"foreign_key_column": null,
+				"foreign_key_table": null,
+				"table": "tour_steps_translations"
+			},
+			"meta": {
+				"collection": "tour_steps_translations",
+				"field": "id",
+				"interface": "input",
+				"readonly": true,
+				"hidden": true,
+				"sort": 1
+			}
+		},
+		{
+			"collection": "tour_steps_translations",
+			"field": "tour_steps_id",
+			"type": "integer",
+			"schema": {
+				"name": "tour_steps_id",
+				"table": "tour_steps_translations",
+				"data_type": "integer",
+				"is_nullable": false,
+				"is_primary_key": false,
+				"has_auto_increment": false,
+				"foreign_key_column": "id",
+				"foreign_key_table": "tour_steps"
+			},
+			"meta": {
+				"collection": "tour_steps_translations",
+				"field": "tour_steps_id",
+				"hidden": true,
+				"sort": 2
+			}
+		},
+		{
+			"collection": "tour_steps_translations",
+			"field": "languages_code",
+			"type": "string",
+			"schema": {
+				"name": "languages_code",
+				"table": "tour_steps_translations",
+				"data_type": "varchar",
+				"max_length": 10,
+				"is_nullable": false,
+				"is_primary_key": false,
+				"has_auto_increment": false,
+				"foreign_key_column": "code",
+				"foreign_key_table": "languages"
+			},
+			"meta": {
+				"collection": "tour_steps_translations",
+				"field": "languages_code",
+				"hidden": true,
+				"sort": 3
+			}
+		},
+		{
+			"collection": "tour_steps_translations",
+			"field": "note",
+			"type": "text",
+			"schema": {
+				"name": "note",
+				"table": "tour_steps_translations",
+				"data_type": "text",
+				"is_nullable": true,
+				"is_primary_key": false,
+				"has_auto_increment": false
+			},
+			"meta": {
+				"collection": "tour_steps_translations",
+				"field": "note",
+				"interface": "input-multiline",
+				"sort": 4,
+				"width": "full"
+			}
+		},
+		{
+			"collection": "tours_places_regions",
+			"field": "id",
+			"type": "integer",
+			"schema": {
+				"name": "id",
+				"data_type": "integer",
+				"is_nullable": false,
+				"is_primary_key": true,
+				"has_auto_increment": true,
+				"is_unique": false,
+				"is_indexed": false,
+				"foreign_key_column": null,
+				"foreign_key_table": null,
+				"table": "tours_places_regions"
+			},
+			"meta": {
+				"collection": "tours_places_regions",
+				"field": "id",
+				"interface": "input",
+				"readonly": true,
+				"hidden": true,
+				"sort": 1
+			}
+		},
+		{
+			"collection": "tours_places_regions",
+			"field": "tours_id",
+			"type": "uuid",
+			"schema": {
+				"name": "tours_id",
+				"table": "tours_places_regions",
+				"data_type": "uuid",
+				"is_nullable": false,
+				"is_primary_key": false,
+				"has_auto_increment": false,
+				"foreign_key_column": "id",
+				"foreign_key_table": "tours"
+			},
+			"meta": {
+				"collection": "tours_places_regions",
+				"field": "tours_id",
+				"hidden": true,
+				"sort": 2
+			}
+		},
+		{
+			"collection": "tours_places_regions",
+			"field": "places_regions_id",
+			"type": "uuid",
+			"schema": {
+				"name": "places_regions_id",
+				"table": "tours_places_regions",
+				"data_type": "uuid",
+				"is_nullable": false,
+				"is_primary_key": false,
+				"has_auto_increment": false,
+				"foreign_key_column": "id",
+				"foreign_key_table": "places_regions"
+			},
+			"meta": {
+				"collection": "tours_places_regions",
+				"field": "places_regions_id",
+				"hidden": true,
+				"sort": 3
+			}
+		}
+	],
+	"relations": [
+		{
+			"collection": "tours",
+			"field": "image",
+			"related_collection": "directus_files",
+			"schema": {
+				"table": "tours",
+				"column": "image",
+				"foreign_key_table": "directus_files",
+				"foreign_key_column": "id",
+				"on_update": "NO ACTION",
+				"on_delete": "SET NULL"
+			},
+			"meta": {
+				"many_collection": "tours",
+				"many_field": "image",
+				"one_collection": "directus_files",
+				"one_field": null
+			}
+		},
+		{
+			"collection": "tours_translations",
+			"field": "tours_id",
+			"related_collection": "tours",
+			"schema": {
+				"table": "tours_translations",
+				"column": "tours_id",
+				"foreign_key_table": "tours",
+				"foreign_key_column": "id",
+				"on_update": "NO ACTION",
+				"on_delete": "CASCADE"
+			},
+			"meta": {
+				"many_collection": "tours_translations",
+				"many_field": "tours_id",
+				"one_collection": "tours",
+				"one_field": "translations",
+				"junction_field": "languages_code"
+			}
+		},
+		{
+			"collection": "tours_translations",
+			"field": "languages_code",
+			"related_collection": "languages",
+			"schema": {
+				"table": "tours_translations",
+				"column": "languages_code",
+				"foreign_key_table": "languages",
+				"foreign_key_column": "code",
+				"on_update": "NO ACTION",
+				"on_delete": "CASCADE"
+			},
+			"meta": {
+				"many_collection": "tours_translations",
+				"many_field": "languages_code",
+				"one_collection": "languages",
+				"one_field": null,
+				"junction_field": "tours_id"
+			}
+		},
+		{
+			"collection": "tour_steps",
+			"field": "tour_id",
+			"related_collection": "tours",
+			"schema": {
+				"table": "tour_steps",
+				"column": "tour_id",
+				"foreign_key_table": "tours",
+				"foreign_key_column": "id",
+				"on_update": "NO ACTION",
+				"on_delete": "CASCADE"
+			},
+			"meta": {
+				"many_collection": "tour_steps",
+				"many_field": "tour_id",
+				"one_collection": "tours",
+				"one_field": "steps",
+				"sort_field": "sort"
+			}
+		},
+		{
+			"collection": "tour_steps",
+			"field": "place_id",
+			"related_collection": "places",
+			"schema": {
+				"table": "tour_steps",
+				"column": "place_id",
+				"foreign_key_table": "places",
+				"foreign_key_column": "id",
+				"on_update": "NO ACTION",
+				"on_delete": "RESTRICT"
+			},
+			"meta": {
+				"many_collection": "tour_steps",
+				"many_field": "place_id",
+				"one_collection": "places",
+				"one_field": null
+			}
+		},
+		{
+			"collection": "tour_steps_translations",
+			"field": "tour_steps_id",
+			"related_collection": "tour_steps",
+			"schema": {
+				"table": "tour_steps_translations",
+				"column": "tour_steps_id",
+				"foreign_key_table": "tour_steps",
+				"foreign_key_column": "id",
+				"on_update": "NO ACTION",
+				"on_delete": "CASCADE"
+			},
+			"meta": {
+				"many_collection": "tour_steps_translations",
+				"many_field": "tour_steps_id",
+				"one_collection": "tour_steps",
+				"one_field": "translations",
+				"junction_field": "languages_code"
+			}
+		},
+		{
+			"collection": "tour_steps_translations",
+			"field": "languages_code",
+			"related_collection": "languages",
+			"schema": {
+				"table": "tour_steps_translations",
+				"column": "languages_code",
+				"foreign_key_table": "languages",
+				"foreign_key_column": "code",
+				"on_update": "NO ACTION",
+				"on_delete": "CASCADE"
+			},
+			"meta": {
+				"many_collection": "tour_steps_translations",
+				"many_field": "languages_code",
+				"one_collection": "languages",
+				"one_field": null,
+				"junction_field": "tour_steps_id"
+			}
+		},
+		{
+			"collection": "tours_places_regions",
+			"field": "tours_id",
+			"related_collection": "tours",
+			"schema": {
+				"table": "tours_places_regions",
+				"column": "tours_id",
+				"foreign_key_table": "tours",
+				"foreign_key_column": "id",
+				"on_update": "NO ACTION",
+				"on_delete": "CASCADE"
+			},
+			"meta": {
+				"many_collection": "tours_places_regions",
+				"many_field": "tours_id",
+				"one_collection": "tours",
+				"one_field": "regions",
+				"junction_field": "places_regions_id"
+			}
+		},
+		{
+			"collection": "tours_places_regions",
+			"field": "places_regions_id",
+			"related_collection": "places_regions",
+			"schema": {
+				"table": "tours_places_regions",
+				"column": "places_regions_id",
+				"foreign_key_table": "places_regions",
+				"foreign_key_column": "id",
+				"on_update": "NO ACTION",
+				"on_delete": "CASCADE"
+			},
+			"meta": {
+				"many_collection": "tours_places_regions",
+				"many_field": "places_regions_id",
+				"one_collection": "places_regions",
+				"one_field": null,
+				"junction_field": "tours_id"
+			}
+		}
+	]
+}
