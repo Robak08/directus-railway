@@ -92,7 +92,8 @@ export function snapshotFromExisting(row: ExistingRelationRow): RelationSnapshot
 		foreign_key_table: row.foreign_key_table,
 		foreign_key_column: row.foreign_key_column,
 		junction_field: row.junction_field,
-		one_field: row.one_field
+		one_field: row.one_field,
+		one_deselect_action: row.one_deselect_action
 	};
 }
 
@@ -131,6 +132,12 @@ export function relationNeedsRepair(
 			return true;
 		}
 	}
+	if (Object.prototype.hasOwnProperty.call(desiredMeta, 'one_deselect_action')) {
+		const want = (desiredMeta.one_deselect_action ?? null) as string | null;
+		if ((existing.one_deselect_action ?? null) !== want) {
+			return true;
+		}
+	}
 
 	return false;
 }
@@ -151,7 +158,7 @@ export async function readRelationRow(
 ): Promise<ExistingRelationRow | null> {
 
 	const relationRow = (await database
-		.select(['id', 'one_collection', 'junction_field', 'one_field'])
+		.select(['id', 'one_collection', 'junction_field', 'one_field', 'one_deselect_action'])
 		.from('directus_relations')
 		.where({
 			many_collection: collection,
@@ -163,6 +170,7 @@ export async function readRelationRow(
 				one_collection: string | null;
 				junction_field: string | null;
 				one_field: string | null;
+				one_deselect_action: string | null;
 		  }
 		| undefined;
 
@@ -177,6 +185,7 @@ export async function readRelationRow(
 		related_collection: relationRow.one_collection,
 		junction_field: relationRow.junction_field,
 		one_field: relationRow.one_field,
+		one_deselect_action: relationRow.one_deselect_action,
 		foreign_key_table: fk.foreign_key_table,
 		foreign_key_column: fk.foreign_key_column
 	};

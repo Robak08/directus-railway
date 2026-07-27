@@ -336,7 +336,8 @@ export const directusState: DirectusState = {
 				options: {
 					template: '{{place_id.title}}',
 					enableCreate: true,
-					enableSelect: true
+					enableSelect: true,
+					enableDelete: true
 				},
 				display: 'related-values',
 				display_options: {
@@ -831,7 +832,8 @@ export const directusState: DirectusState = {
 				many_field: 'tour_id',
 				one_collection: 'tours',
 				one_field: 'steps',
-				sort_field: 'sort'
+				sort_field: 'sort',
+				one_deselect_action: 'delete'
 			}
 		},
 		{

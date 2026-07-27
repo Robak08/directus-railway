@@ -45,7 +45,8 @@ describe('relationNeedsRepair', () => {
 			foreign_key_table: 'languages',
 			foreign_key_column: 'code',
 			junction_field: 'tours_id',
-			one_field: null
+			one_field: null,
+			one_deselect_action: null
 		};
 		expect(relationNeedsRepair(existing, languagesCodeDesired)).toBe(false);
 	});
@@ -56,7 +57,8 @@ describe('relationNeedsRepair', () => {
 			foreign_key_table: 'languages',
 			foreign_key_column: 'id',
 			junction_field: 'tours_id',
-			one_field: null
+			one_field: null,
+			one_deselect_action: null
 		};
 		expect(relationNeedsRepair(existing, languagesCodeDesired)).toBe(true);
 	});
@@ -67,7 +69,8 @@ describe('relationNeedsRepair', () => {
 			foreign_key_table: 'languages',
 			foreign_key_column: 'code',
 			junction_field: 'tours_id',
-			one_field: null
+			one_field: null,
+			one_deselect_action: null
 		};
 		expect(relationNeedsRepair(existing, languagesCodeDesired)).toBe(true);
 	});
@@ -78,7 +81,8 @@ describe('relationNeedsRepair', () => {
 			foreign_key_table: 'tours',
 			foreign_key_column: 'id',
 			junction_field: null,
-			one_field: 'translations'
+			one_field: 'translations',
+			one_deselect_action: null
 		};
 		expect(relationNeedsRepair(existing, toursIdDesired)).toBe(true);
 	});
@@ -89,7 +93,8 @@ describe('relationNeedsRepair', () => {
 			foreign_key_table: 'tours',
 			foreign_key_column: 'id',
 			junction_field: 'languages_code',
-			one_field: 'translations'
+			one_field: 'translations',
+			one_deselect_action: null
 		};
 		expect(relationNeedsRepair(existing, toursIdDesired)).toBe(false);
 	});
@@ -114,7 +119,8 @@ describe('relationNeedsRepair', () => {
 			foreign_key_table: 'places_regions',
 			foreign_key_column: 'id',
 			junction_field: 'tours_id',
-			one_field: null
+			one_field: null,
+			one_deselect_action: null
 		};
 		expect(relationNeedsRepair(existing, placesRegionsIdDesired)).toBe(false);
 	});
@@ -125,8 +131,30 @@ describe('relationNeedsRepair', () => {
 			foreign_key_table: 'places_regions',
 			foreign_key_column: 'id',
 			junction_field: null,
-			one_field: null
+			one_field: null,
+			one_deselect_action: null
 		};
 		expect(relationNeedsRepair(existing, placesRegionsIdDesired)).toBe(true);
+	});
+
+	it('returns true when tour_steps O2M deselect action is not delete', () => {
+		const desired: DirectusStateRelation = {
+			collection: 'tour_steps',
+			field: 'tour_id',
+			related_collection: 'tours',
+			meta: {
+				one_field: 'steps',
+				one_deselect_action: 'delete'
+			}
+		};
+		const existing: RelationSnapshot = {
+			related_collection: 'tours',
+			foreign_key_table: 'tours',
+			foreign_key_column: 'id',
+			junction_field: null,
+			one_field: 'steps',
+			one_deselect_action: 'nullify'
+		};
+		expect(relationNeedsRepair(existing, desired)).toBe(true);
 	});
 });

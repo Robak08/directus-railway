@@ -110,6 +110,10 @@ Scaffold checks `places_regions.id` is `uuid` before creating the junction. If `
 
 **Existing DBs** created with integer `places_regions_id` or missing junction columns must be fixed manually (column type + M2O); re-scaffold will try to **create missing columns** and **recreate empty-table FK columns** as uuid before relations.
 
+### Studio save: removed tour steps reappear after save
+
+Directus defaults O2M **deselect** to `nullify` (clear parent FK). `tour_steps.tour_id` is **NOT NULL**, so nullify cannot detach removed steps. Extension **v1.0.14+** sets `one_deselect_action: 'delete'` on `tour_steps.tour_id` → `tours` and enables delete in the Steps list UI. Run `POST /krk-tours/scaffold` to repair the relation on existing installs.
+
 ### Studio save: `tour_id: Value can't be null` on `tours`
 
 When editing a tour with nested **Steps** and **Translations**, Directus Studio may send hidden parent FKs as `null` or use `steps: { create, update, delete }` instead of a flat array. From **v1.0.9+**, the `tours-items` hook normalizes nested `steps`, `translations`, and step-level `translations` on `tours.items.create` / `tours.items.update`, with a fallback on `tour_steps.items.*`. Scaffold reconciles hidden FK meta (`tour_id`, `tours_id`, `tour_steps_id`, `languages_code`) and sets translation UI to **`defaultLanguage: fi-FI`** with **`userLanguage: false`**. Re-run `POST /krk-tours/scaffold` after upgrade.
