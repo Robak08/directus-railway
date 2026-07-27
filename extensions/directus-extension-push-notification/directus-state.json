@@ -362,13 +362,12 @@
     {
       "collection": "push_delivery",
       "field": "notification",
-      "type": "string",
+      "type": "uuid",
       "schema": {
         "name": "notification",
         "table": "push_delivery",
-        "data_type": "char",
+        "data_type": "uuid",
         "default_value": null,
-        "max_length": 36,
         "numeric_precision": null,
         "numeric_scale": null,
         "is_generated": false,
@@ -385,7 +384,8 @@
         "collection": "push_delivery",
         "field": "notification",
         "special": [
-          "m2o"
+          "m2o",
+          "uuid"
         ],
         "interface": "select-dropdown-m2o",
         "options": null,
@@ -408,13 +408,12 @@
     {
       "collection": "push_delivery",
       "field": "subscription",
-      "type": "string",
+      "type": "uuid",
       "schema": {
         "name": "subscription",
         "table": "push_delivery",
-        "data_type": "char",
+        "data_type": "uuid",
         "default_value": null,
-        "max_length": 36,
         "numeric_precision": null,
         "numeric_scale": null,
         "is_generated": false,
@@ -431,7 +430,8 @@
         "collection": "push_delivery",
         "field": "subscription",
         "special": [
-          "m2o"
+          "m2o",
+          "uuid"
         ],
         "interface": "select-dropdown-m2o",
         "options": null,
@@ -1085,13 +1085,12 @@
     {
       "collection": "push_subscription",
       "field": "user",
-      "type": "string",
+      "type": "uuid",
       "schema": {
         "name": "user",
         "table": "push_subscription",
-        "data_type": "char",
+        "data_type": "uuid",
         "default_value": null,
-        "max_length": 36,
         "numeric_precision": null,
         "numeric_scale": null,
         "is_generated": false,
@@ -1108,7 +1107,8 @@
         "collection": "push_subscription",
         "field": "user",
         "special": [
-          "m2o"
+          "m2o",
+          "uuid"
         ],
         "interface": "select-dropdown-m2o",
         "options": {
@@ -1678,13 +1678,12 @@
     {
       "collection": "user_notification",
       "field": "user",
-      "type": "string",
+      "type": "uuid",
       "schema": {
         "name": "user",
         "table": "user_notification",
-        "data_type": "char",
+        "data_type": "uuid",
         "default_value": null,
-        "max_length": 36,
         "numeric_precision": null,
         "numeric_scale": null,
         "is_generated": false,
@@ -1701,7 +1700,8 @@
         "collection": "user_notification",
         "field": "user",
         "special": [
-          "m2o"
+          "m2o",
+          "uuid"
         ],
         "interface": "select-dropdown-m2o",
         "options": {
@@ -2035,9 +2035,8 @@
       "schema": {
         "name": "icon",
         "table": "user_notification",
-        "data_type": "char",
+        "data_type": "uuid",
         "default_value": null,
-        "max_length": 36,
         "numeric_precision": null,
         "numeric_scale": null,
         "is_generated": false,
@@ -2134,13 +2133,12 @@
     {
       "collection": "user_notification",
       "field": "user_created",
-      "type": "string",
+      "type": "uuid",
       "schema": {
         "name": "user_created",
         "table": "user_notification",
-        "data_type": "char",
+        "data_type": "uuid",
         "default_value": null,
-        "max_length": 36,
         "numeric_precision": null,
         "numeric_scale": null,
         "is_generated": false,
@@ -2157,7 +2155,8 @@
         "collection": "user_notification",
         "field": "user_created",
         "special": [
-          "user-created"
+          "user-created",
+          "uuid"
         ],
         "interface": "select-dropdown-m2o",
         "options": {
@@ -2575,13 +2574,12 @@
     {
       "collection": "user_notification_translations",
       "field": "user_notification_id",
-      "type": "string",
+      "type": "uuid",
       "schema": {
         "name": "user_notification_id",
         "table": "user_notification_translations",
-        "data_type": "char",
+        "data_type": "uuid",
         "default_value": null,
-        "max_length": 36,
         "numeric_precision": null,
         "numeric_scale": null,
         "is_generated": false,
@@ -2597,7 +2595,9 @@
       "meta": {
         "collection": "user_notification_translations",
         "field": "user_notification_id",
-        "special": null,
+        "special": [
+          "uuid"
+        ],
         "interface": null,
         "options": null,
         "display": null,
@@ -3082,8 +3082,7 @@
       "schema": {
         "name": "icon",
         "table": "notification_broadcast",
-        "data_type": "char",
-        "max_length": 36,
+        "data_type": "uuid",
         "is_nullable": true,
         "foreign_key_column": "id",
         "foreign_key_table": "directus_files"
@@ -3290,12 +3289,11 @@
     {
       "collection": "notification_broadcast",
       "field": "user_created",
-      "type": "string",
+      "type": "uuid",
       "schema": {
         "name": "user_created",
         "table": "notification_broadcast",
-        "data_type": "char",
-        "max_length": 36,
+        "data_type": "uuid",
         "is_nullable": true,
         "is_primary_key": false,
         "has_auto_increment": false,
@@ -3307,7 +3305,8 @@
         "collection": "notification_broadcast",
         "field": "user_created",
         "special": [
-          "user-created"
+          "user-created",
+          "uuid"
         ],
         "interface": "select-dropdown-m2o",
         "options": null,
@@ -3446,12 +3445,11 @@
     {
       "collection": "notification_broadcast_translations",
       "field": "notification_broadcast_id",
-      "type": "string",
+      "type": "uuid",
       "schema": {
         "name": "notification_broadcast_id",
         "table": "notification_broadcast_translations",
-        "data_type": "char",
-        "max_length": 36,
+        "data_type": "uuid",
         "is_nullable": false,
         "is_primary_key": false,
         "has_auto_increment": false,
@@ -3462,7 +3460,9 @@
       "meta": {
         "collection": "notification_broadcast_translations",
         "field": "notification_broadcast_id",
-        "special": null,
+        "special": [
+          "uuid"
+        ],
         "interface": "input",
         "options": null,
         "readonly": false,
@@ -3573,12 +3573,11 @@
     {
       "collection": "notification_broadcast_roles",
       "field": "notification_broadcast_id",
-      "type": "string",
+      "type": "uuid",
       "schema": {
         "name": "notification_broadcast_id",
         "table": "notification_broadcast_roles",
-        "data_type": "char",
-        "max_length": 36,
+        "data_type": "uuid",
         "is_nullable": false,
         "is_primary_key": false,
         "has_auto_increment": false,
@@ -3589,7 +3588,9 @@
       "meta": {
         "collection": "notification_broadcast_roles",
         "field": "notification_broadcast_id",
-        "special": null,
+        "special": [
+          "uuid"
+        ],
         "interface": "input",
         "options": null,
         "readonly": false,
@@ -3603,12 +3604,11 @@
     {
       "collection": "notification_broadcast_roles",
       "field": "directus_roles_id",
-      "type": "string",
+      "type": "uuid",
       "schema": {
         "name": "directus_roles_id",
         "table": "notification_broadcast_roles",
-        "data_type": "char",
-        "max_length": 36,
+        "data_type": "uuid",
         "is_nullable": false,
         "is_primary_key": false,
         "has_auto_increment": false,
@@ -3619,7 +3619,9 @@
       "meta": {
         "collection": "notification_broadcast_roles",
         "field": "directus_roles_id",
-        "special": null,
+        "special": [
+          "uuid"
+        ],
         "interface": "input",
         "options": null,
         "readonly": false,
@@ -3651,12 +3653,11 @@
     {
       "collection": "notification_broadcast_users",
       "field": "notification_broadcast_id",
-      "type": "string",
+      "type": "uuid",
       "schema": {
         "name": "notification_broadcast_id",
         "table": "notification_broadcast_users",
-        "data_type": "char",
-        "max_length": 36,
+        "data_type": "uuid",
         "is_nullable": false,
         "is_primary_key": false,
         "has_auto_increment": false,
@@ -3667,7 +3668,9 @@
       "meta": {
         "collection": "notification_broadcast_users",
         "field": "notification_broadcast_id",
-        "special": null,
+        "special": [
+          "uuid"
+        ],
         "interface": "input",
         "options": null,
         "readonly": false,
@@ -3681,12 +3684,11 @@
     {
       "collection": "notification_broadcast_users",
       "field": "directus_users_id",
-      "type": "string",
+      "type": "uuid",
       "schema": {
         "name": "directus_users_id",
         "table": "notification_broadcast_users",
-        "data_type": "char",
-        "max_length": 36,
+        "data_type": "uuid",
         "is_nullable": false,
         "is_primary_key": false,
         "has_auto_increment": false,
@@ -3697,7 +3699,9 @@
       "meta": {
         "collection": "notification_broadcast_users",
         "field": "directus_users_id",
-        "special": null,
+        "special": [
+          "uuid"
+        ],
         "interface": "input",
         "options": null,
         "readonly": false,
@@ -3711,12 +3715,11 @@
     {
       "collection": "user_notification",
       "field": "broadcast",
-      "type": "string",
+      "type": "uuid",
       "schema": {
         "name": "broadcast",
         "table": "user_notification",
-        "data_type": "char",
-        "max_length": 36,
+        "data_type": "uuid",
         "is_nullable": true,
         "is_primary_key": false,
         "has_auto_increment": false,
@@ -3728,7 +3731,8 @@
         "collection": "user_notification",
         "field": "broadcast",
         "special": [
-          "m2o"
+          "m2o",
+          "uuid"
         ],
         "interface": "select-dropdown-m2o",
         "options": null,

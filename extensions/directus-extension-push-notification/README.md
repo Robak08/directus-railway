@@ -11,6 +11,8 @@
 > ⚠️ **BETA VERSION WARNING**  
 > This extension is currently in **BETA**. While stable for testing and development, it's highly recommended to **backup your database** before installing or updating to any beta version. Breaking changes may occur between beta releases.
 
+> **Krakovan Opas fork (v0.6.1+):** `directus-state.json` declares push M2O/M2M foreign keys as PostgreSQL `uuid` (not `char(36)`), so Directus 12 on Postgres can create FK constraints on first install. After upgrading, restart Directus; if an older DB still has `varchar` FK columns, migrate them to `uuid` once (see project CHANGELOG 0.6.1).
+
 [Installation](#-installation) • [Quick Start](#-quick-start) • [FAQ](#-frequently-asked-questions) • [API Docs](#-api-endpoints) • [Troubleshooting](#-troubleshooting)
 
 </div>

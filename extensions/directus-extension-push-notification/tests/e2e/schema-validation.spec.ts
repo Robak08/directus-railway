@@ -371,46 +371,41 @@ test.describe("Schema Validation - Collections, Fields e Relations (E2E)", () =>
 
   // ─── Consistência de tipos FK ──────────────────────────────────
 
-  test("FKs que apontam para UUIDs devem ser char/varchar(36)", async () => {
-    // Directus pode usar char ou varchar dependendo do driver de banco
-    const validUuidTypes = ["char", "varchar"];
+  test("FKs pointing at UUID primary keys use uuid column type", async () => {
+    const expectUuid = (fields: Awaited<ReturnType<typeof getFields>>, fieldName: string) => {
+      expect(findField(fields, fieldName).schema?.data_type, fieldName).toBe("uuid");
+    };
 
-    // push_delivery → user_notification, push_subscription
     const deliveryFields = await getFields("push_delivery");
-    expect(validUuidTypes, "push_delivery.notification data_type").toContain(
-      findField(deliveryFields, "notification").schema?.data_type,
-    );
-    expect(validUuidTypes, "push_delivery.subscription data_type").toContain(
-      findField(deliveryFields, "subscription").schema?.data_type,
-    );
+    expectUuid(deliveryFields, "notification");
+    expectUuid(deliveryFields, "subscription");
 
-    // push_subscription → directus_users
     const subFields = await getFields("push_subscription");
-    expect(validUuidTypes, "push_subscription.user data_type").toContain(
-      findField(subFields, "user").schema?.data_type,
-    );
+    expectUuid(subFields, "user");
 
-    // user_notification → directus_users, directus_files
     const notifFields = await getFields("user_notification");
-    expect(validUuidTypes, "user_notification.user data_type").toContain(
-      findField(notifFields, "user").schema?.data_type,
-    );
-    expect(
-      validUuidTypes,
-      "user_notification.user_created data_type",
-    ).toContain(findField(notifFields, "user_created").schema?.data_type);
-    expect(validUuidTypes, "user_notification.icon data_type").toContain(
-      findField(notifFields, "icon").schema?.data_type,
-    );
+    expectUuid(notifFields, "user");
+    expectUuid(notifFields, "user_created");
+    expectUuid(notifFields, "icon");
+    expectUuid(notifFields, "broadcast");
 
-    // user_notification_translations → user_notification
     const transFields = await getFields("user_notification_translations");
-    expect(
-      validUuidTypes,
-      "user_notification_translations.user_notification_id data_type",
-    ).toContain(
-      findField(transFields, "user_notification_id").schema?.data_type,
-    );
+    expectUuid(transFields, "user_notification_id");
+
+    const broadcastFields = await getFields("notification_broadcast");
+    expectUuid(broadcastFields, "user_created");
+    expectUuid(broadcastFields, "icon");
+
+    const broadcastTransFields = await getFields("notification_broadcast_translations");
+    expectUuid(broadcastTransFields, "notification_broadcast_id");
+
+    const broadcastRolesFields = await getFields("notification_broadcast_roles");
+    expectUuid(broadcastRolesFields, "notification_broadcast_id");
+    expectUuid(broadcastRolesFields, "directus_roles_id");
+
+    const broadcastUsersFields = await getFields("notification_broadcast_users");
+    expectUuid(broadcastUsersFields, "notification_broadcast_id");
+    expectUuid(broadcastUsersFields, "directus_users_id");
   });
 
   // ─── UI: Verificar que campos de relacionamento não mostram erro ──
