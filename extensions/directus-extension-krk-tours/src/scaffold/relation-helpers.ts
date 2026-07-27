@@ -244,7 +244,7 @@ export async function ensureOrRepairRelations(
 				continue;
 			}
 
-			failed.push(`${relationKey} -> ${relation.related_collection}`);
+			failed.push(`${relationKey} -> ${relation.related_collection}: ${err?.message ?? 'unknown'}`);
 			logger.error(`[krk-tours] Failed relation '${relationKey}'`, error);
 		}
 	}

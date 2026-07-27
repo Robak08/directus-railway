@@ -61,6 +61,8 @@ KRK_TOURS_APP_ROLE=Public,API
 KRK_TOURS_EDITOR_ROLE=Editor
 ```
 
+On **Directus 12** (policy-based access), permissions are copied to **policies** that already have `places` read/update (or policies linked to the roles above via `directus_access`).
+
 ## Seed behaviour
 
 - Looks up `places_regions` by slug (`krakova`, `krakow`, …) or title containing “krak”.

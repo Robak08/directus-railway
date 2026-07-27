@@ -9,6 +9,7 @@ import {
 import { buildFieldPayloadForCreate } from './scaffold-field-payload.js';
 import { validateToursRegionsJunctionRelations } from './validate-critical-relations.js';
 import { applyTourPermissions } from './permissions.js';
+import { reconcileForeignKeyField } from './reconcile-fk-fields.js';
 import type {
 	DatabaseLike,
 	DirectusStateField,
@@ -25,6 +26,7 @@ type CollectionsServiceLike = {
 type FieldsServiceLike = {
 	readOne: (collection: string, field: string) => Promise<unknown>;
 	createField: (collection: string, data: Record<string, unknown>) => Promise<unknown>;
+	updateField: (collection: string, field: string, data: Record<string, unknown>) => Promise<unknown>;
 };
 
 type ScaffoldContext = {
@@ -169,6 +171,24 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 
 	if (relations.length > 0) {
 		const updatedSchema = await getSchema({ database });
+		const fieldsServiceForRelations = new FieldsService({
+			knex: database,
+			schema: updatedSchema
+		});
+
+		const fkFields = fields.filter((field) => field.schema?.foreign_key_table);
+		for (const field of fkFields) {
+			const fkError = await reconcileForeignKeyField(
+				fieldsServiceForRelations,
+				database,
+				field,
+				logger
+			);
+			if (fkError) {
+				summary.errors.push(fkError);
+			}
+		}
+
 		const relationsService = new RelationsService({
 			knex: database,
 			schema: updatedSchema
@@ -205,7 +225,6 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 	try {
 		const permissionsCreated = await applyTourPermissions({
 			database,
-			getSchema,
 			logger
 		});
 		summary.permissionsCreated = permissionsCreated;

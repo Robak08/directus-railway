@@ -519,11 +519,11 @@ export const directusState: DirectusState = {
 		{
 			collection: 'tour_steps',
 			field: 'place_id',
-			type: 'integer',
+			type: 'uuid',
 			schema: {
 				name: 'place_id',
 				table: 'tour_steps',
-				data_type: 'integer',
+				data_type: 'uuid',
 				is_nullable: false,
 				is_primary_key: false,
 				has_auto_increment: false,

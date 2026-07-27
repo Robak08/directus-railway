@@ -12,23 +12,16 @@ const APP_READ_COLLECTIONS = [...TOUR_COLLECTIONS] as string[];
 
 const EDITOR_ACTIONS = ['create', 'read', 'update', 'delete'] as const;
 
-type PermissionRow = {
-	id?: number;
-	role: string | null;
+type PermissionInsert = {
 	collection: string;
 	action: string;
 	permissions: Record<string, unknown> | null;
-	validation: Record<string, unknown> | null;
-	presets: Record<string, unknown> | null;
-	fields: string[] | null;
-	policy: string | null;
+	fields: string;
 };
 
 type PermissionsContext = {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	database: any;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	getSchema: (options?: { database?: any }) => Promise<unknown>;
 	logger: ScaffoldLogger;
 };
 
@@ -38,6 +31,10 @@ function parseRoleNames(): string[] {
 		.split(',')
 		.map((name) => name.trim())
 		.filter(Boolean);
+}
+
+async function usesRoleColumnOnPermissions(database: PermissionsContext['database']): Promise<boolean> {
+	return database.schema.hasColumn('directus_permissions', 'role');
 }
 
 async function findRolesByNames(database: PermissionsContext['database'], names: string[]): Promise<string[]> {
@@ -50,88 +47,129 @@ async function findRolesByNames(database: PermissionsContext['database'], names:
 	return rows.map((row) => row.id);
 }
 
-async function findRolesWithPlacesRead(database: PermissionsContext['database']): Promise<string[]> {
-	const rows = (await database('directus_permissions')
-		.where({ collection: 'places', action: 'read' })
-		.whereNotNull('role')
-		.distinct('role')
-		.select('role')) as { role: string }[];
+async function findPolicyIdsForRoles(
+	database: PermissionsContext['database'],
+	roleIds: string[]
+): Promise<string[]> {
+	if (roleIds.length === 0) return [];
 
-	return rows.map((row) => row.role).filter(Boolean);
+	const hasAccessTable = await database.schema.hasTable('directus_access');
+	if (!hasAccessTable) return [];
+
+	const rows = (await database('directus_access')
+		.whereIn('role', roleIds)
+		.whereNotNull('policy')
+		.distinct('policy')
+		.select('policy')) as { policy: string }[];
+
+	return rows.map((row) => row.policy).filter(Boolean);
 }
 
-async function findEditorRoles(database: PermissionsContext['database']): Promise<string[]> {
-	const configured = process.env.KRK_TOURS_EDITOR_ROLE?.trim();
-	if (configured) {
-		const rows = (await database('directus_roles').where({ name: configured }).select('id')) as {
-			id: string;
-		}[];
-		return rows.map((row) => row.id);
-	}
-
+async function findPoliciesWithPlacesAction(
+	database: PermissionsContext['database'],
+	action: string
+): Promise<string[]> {
 	const rows = (await database('directus_permissions')
-		.where({ collection: 'places', action: 'update' })
-		.whereNotNull('role')
-		.distinct('role')
-		.select('role')) as { role: string }[];
+		.where({ collection: 'places', action })
+		.whereNotNull('policy')
+		.distinct('policy')
+		.select('policy')) as { policy: string }[];
 
-	return rows.map((row) => row.role).filter(Boolean);
+	return rows.map((row) => row.policy).filter(Boolean);
 }
 
-async function permissionExists(
+async function rolePermissionExists(
 	database: PermissionsContext['database'],
 	role: string,
 	collection: string,
 	action: string
 ): Promise<boolean> {
-	const row = await database('directus_permissions')
-		.where({ role, collection, action })
-		.first();
-
+	const row = await database('directus_permissions').where({ role, collection, action }).first();
 	return Boolean(row);
 }
 
-async function createPermission(
+async function policyPermissionExists(
 	database: PermissionsContext['database'],
-	row: Omit<PermissionRow, 'id'>
+	policy: string,
+	collection: string,
+	action: string
 ): Promise<boolean> {
-	if (!row.role) return false;
+	const row = await database('directus_permissions').where({ policy, collection, action }).first();
+	return Boolean(row);
+}
 
-	const exists = await permissionExists(database, row.role, row.collection, row.action);
-	if (exists) return false;
+async function insertRolePermission(
+	database: PermissionsContext['database'],
+	role: string,
+	row: PermissionInsert
+): Promise<boolean> {
+	if (await rolePermissionExists(database, role, row.collection, row.action)) {
+		return false;
+	}
 
 	await database('directus_permissions').insert({
-		role: row.role,
+		role,
 		collection: row.collection,
 		action: row.action,
 		permissions: row.permissions ?? null,
-		validation: row.validation ?? null,
-		presets: row.presets ?? null,
-		fields: Array.isArray(row.fields) ? row.fields.join(',') : (row.fields ?? '*'),
-		policy: row.policy
+		validation: null,
+		presets: null,
+		fields: row.fields,
+		policy: null
 	});
 
 	return true;
 }
 
-export async function applyTourPermissions(context: PermissionsContext): Promise<number> {
-	const { database, logger } = context;
-
-	const hasPermissionsTable = await database.schema.hasTable('directus_permissions');
-	if (!hasPermissionsTable) {
-		logger.warn('[krk-tours] directus_permissions table missing; skip permissions');
-		return 0;
+async function insertPolicyPermission(
+	database: PermissionsContext['database'],
+	policy: string,
+	row: PermissionInsert
+): Promise<boolean> {
+	if (await policyPermissionExists(database, policy, row.collection, row.action)) {
+		return false;
 	}
 
+	await database('directus_permissions').insert({
+		policy,
+		collection: row.collection,
+		action: row.action,
+		permissions: row.permissions ?? null,
+		validation: null,
+		presets: null,
+		fields: row.fields
+	});
+
+	return true;
+}
+
+async function applyViaRoles(database: PermissionsContext['database'], logger: ScaffoldLogger): Promise<number> {
 	const configuredNames = parseRoleNames();
 	const appRoleIds = [
 		...new Set([
 			...(await findRolesByNames(database, configuredNames)),
-			...(await findRolesWithPlacesRead(database))
+			...(
+				await database('directus_permissions')
+					.where({ collection: 'places', action: 'read' })
+					.whereNotNull('role')
+					.distinct('role')
+					.select('role')
+			).map((row: { role: string }) => row.role)
 		])
 	];
 
-	const editorRoleIds = [...new Set(await findEditorRoles(database))];
+	const editorRoleIds = await (async () => {
+		const configured = process.env.KRK_TOURS_EDITOR_ROLE?.trim();
+		if (configured) {
+			return findRolesByNames(database, [configured]);
+		}
+		const rows = await database('directus_permissions')
+			.where({ collection: 'places', action: 'update' })
+			.whereNotNull('role')
+			.distinct('role')
+			.select('role');
+		return rows.map((row: { role: string }) => row.role);
+	})();
 
 	if (appRoleIds.length === 0) {
 		logger.warn(
@@ -143,19 +181,13 @@ export async function applyTourPermissions(context: PermissionsContext): Promise
 
 	for (const roleId of appRoleIds) {
 		for (const collection of APP_READ_COLLECTIONS) {
-			const permissions =
-				collection === 'tours' ? { status: { _eq: 'published' } } : null;
-
+			const permissions = collection === 'tours' ? { status: { _eq: 'published' } } : null;
 			if (
-				await createPermission(database, {
-					role: roleId,
+				await insertRolePermission(database, roleId, {
 					collection,
 					action: 'read',
 					permissions,
-					validation: null,
-					presets: null,
-					fields: ['*'],
-					policy: null
+					fields: '*'
 				})
 			) {
 				created++;
@@ -167,15 +199,11 @@ export async function applyTourPermissions(context: PermissionsContext): Promise
 		for (const collection of TOUR_COLLECTIONS) {
 			for (const action of EDITOR_ACTIONS) {
 				if (
-					await createPermission(database, {
-						role: roleId,
+					await insertRolePermission(database, roleId, {
 						collection,
 						action,
-						permissions: action === 'read' ? null : null,
-						validation: null,
-						presets: null,
-						fields: ['*'],
-						policy: null
+						permissions: null,
+						fields: '*'
 					})
 				) {
 					created++;
@@ -184,10 +212,89 @@ export async function applyTourPermissions(context: PermissionsContext): Promise
 		}
 	}
 
+	return created;
+}
+
+async function applyViaPolicies(database: PermissionsContext['database'], logger: ScaffoldLogger): Promise<number> {
+	const configuredNames = parseRoleNames();
+	const configuredRoleIds = await findRolesByNames(database, configuredNames);
+	const policiesFromRoles = await findPolicyIdsForRoles(database, configuredRoleIds);
+
+	const appPolicyIds = [
+		...new Set([...policiesFromRoles, ...(await findPoliciesWithPlacesAction(database, 'read'))])
+	];
+
+	const editorPolicyIds = await (async () => {
+		const configured = process.env.KRK_TOURS_EDITOR_ROLE?.trim();
+		if (configured) {
+			const roleIds = await findRolesByNames(database, [configured]);
+			return findPolicyIdsForRoles(database, roleIds);
+		}
+		return findPoliciesWithPlacesAction(database, 'update');
+	})();
+
+	if (appPolicyIds.length === 0) {
+		logger.warn(
+			'[krk-tours] No policies with places read found (set KRK_TOURS_APP_ROLE or grant places read on a policy first)'
+		);
+	}
+
+	let created = 0;
+
+	for (const policyId of appPolicyIds) {
+		for (const collection of APP_READ_COLLECTIONS) {
+			const permissions = collection === 'tours' ? { status: { _eq: 'published' } } : null;
+			if (
+				await insertPolicyPermission(database, policyId, {
+					collection,
+					action: 'read',
+					permissions,
+					fields: '*'
+				})
+			) {
+				created++;
+			}
+		}
+	}
+
+	for (const policyId of editorPolicyIds) {
+		for (const collection of TOUR_COLLECTIONS) {
+			for (const action of EDITOR_ACTIONS) {
+				if (
+					await insertPolicyPermission(database, policyId, {
+						collection,
+						action,
+						permissions: null,
+						fields: '*'
+					})
+				) {
+					created++;
+				}
+			}
+		}
+	}
+
+	return created;
+}
+
+export async function applyTourPermissions(context: PermissionsContext): Promise<number> {
+	const { database, logger } = context;
+
+	const hasPermissionsTable = await database.schema.hasTable('directus_permissions');
+	if (!hasPermissionsTable) {
+		logger.warn('[krk-tours] directus_permissions table missing; skip permissions');
+		return 0;
+	}
+
+	const useRoleColumn = await usesRoleColumnOnPermissions(database);
+	const created = useRoleColumn
+		? await applyViaRoles(database, logger)
+		: await applyViaPolicies(database, logger);
+
 	if (created > 0) {
 		logger.info(`[krk-tours] Created ${created} permission row(s)`);
 	} else {
-		logger.debug('[krk-tours] Tour permissions already present or no roles matched');
+		logger.debug('[krk-tours] Tour permissions already present or no roles/policies matched');
 	}
 
 	return created;
