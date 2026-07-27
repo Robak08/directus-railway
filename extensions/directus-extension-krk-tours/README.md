@@ -100,6 +100,8 @@ The **Regions** field is M2M via `tours_places_regions`. Greenfield installs (v1
 
 Scaffold checks `places_regions.id` is `uuid` before creating the junction. If `summary.errors` mentions `tours.regions M2M junction incomplete`, inspect Data Model on `tours_places_regions` or re-run scaffold on a fresh DB.
 
+**UI drift (v1.0.7+):** If scaffold is `ok` but Relations still look wrong, check for collection `tours_places_regions_places_regions` and `places_regions_id` with `list-m2m` interface. Re-run scaffold after upgrading, or use [docs/schema-introspection.sql](./docs/schema-introspection.sql). Errors like `Ghost nested junction collection still exists` mean manual cleanup is required.
+
 **Existing DBs** created with integer `places_regions_id` or missing junction columns must be fixed manually (column type + M2O); re-scaffold will try to **create missing columns** and **recreate empty-table FK columns** as uuid before relations.
 
 ## Development

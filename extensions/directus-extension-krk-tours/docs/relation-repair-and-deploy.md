@@ -116,6 +116,18 @@ flowchart TD
 - Manual: alter `places_regions_id` to uuid + configure M2O in Data Model (see plan / README).
 - Re-scaffold **does not** change column types when `tours_places_regions` already exists.
 
+### UI / relation graph drift (v1.0.7+)
+
+Scaffold can report `ok: true` while Studio still shows wrong M2M links when:
+
+- `tours_places_regions.places_regions_id` has `interface: list-m2m` (scalar FK must be hidden).
+- Collection `tours_places_regions_places_regions` exists (nested junction artifact).
+- `directus_relations` has `one_collection = tours_places_regions` and `one_field = places_regions_id`.
+
+**Auto-fix (scaffold):** removes erroneous relation rows, drops **empty** ghost collections, reconciles junction field meta via `FieldsService`, then validates with `validateToursRegionsM2mUiGraph`.
+
+**Manual SQL:** see [schema-introspection.sql](./schema-introspection.sql) section “Ghost nested junction”.
+
 ## Rollback
 
 If `updateOne` causes issues, restore previous extension `dist/` from git tag and re-run scaffold (repair logic absent; manual Data Model fix again).

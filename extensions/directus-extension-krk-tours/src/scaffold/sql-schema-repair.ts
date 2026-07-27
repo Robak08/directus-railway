@@ -125,7 +125,7 @@ export async function repairSchemaFromDatabase(
 	try {
 		await knex('directus_fields')
 			.where({ collection: 'tours_places_regions', field: 'places_regions_id' })
-			.update({ special: null });
+			.update({ special: null, interface: null, hidden: true });
 	} catch {
 		// non-fatal
 	}

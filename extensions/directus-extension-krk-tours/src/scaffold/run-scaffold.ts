@@ -7,7 +7,10 @@ import {
 	validateRelations
 } from './relation-helpers.js';
 import { buildFieldPayloadForCreate } from './scaffold-field-payload.js';
+import { reconcileJunctionFieldMeta } from './reconcile-junction-field-meta.js';
+import { removeGhostNestedJunctions } from './remove-ghost-nested-junction.js';
 import { validateToursRegionsJunctionRelations } from './validate-critical-relations.js';
+import { validateToursRegionsM2mUiGraph } from './validate-m2m-ui-graph.js';
 import { applyTourPermissions } from './permissions.js';
 import { ensureFieldColumnExists, reconcileForeignKeyField } from './reconcile-fk-fields.js';
 import { repairSchemaFromDatabase } from './sql-schema-repair.js';
@@ -22,6 +25,7 @@ import type {
 type CollectionsServiceLike = {
 	readOne: (collection: string) => Promise<unknown>;
 	createOne: (data: Record<string, unknown>) => Promise<unknown>;
+	deleteOne: (collection: string) => Promise<unknown>;
 };
 
 type FieldsServiceLike = {
@@ -218,6 +222,42 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 		}
 
 		updatedSchema = await getSchema({ database });
+		const collectionsServiceForCleanup = new CollectionsService({
+			knex: database,
+			schema: updatedSchema
+		});
+
+		const ghostCleanup = await removeGhostNestedJunctions(
+			database as DatabaseLike,
+			collectionsServiceForCleanup,
+			logger
+		);
+		if (ghostCleanup.removed.length > 0) {
+			logger.info(`[krk-tours] Ghost junction cleanup: ${ghostCleanup.removed.join('; ')}`);
+		}
+		for (const ghostError of ghostCleanup.errors) {
+			summary.errors.push(`Ghost junction: ${ghostError}`);
+		}
+
+		updatedSchema = await getSchema({ database });
+		const fieldsServiceForMeta = new FieldsService({
+			knex: database,
+			schema: updatedSchema
+		});
+		const metaRepair = await reconcileJunctionFieldMeta(
+			database,
+			fieldsServiceForMeta,
+			fields,
+			logger
+		);
+		if (metaRepair.repaired.length > 0) {
+			logger.info(`[krk-tours] Junction meta repaired: ${metaRepair.repaired.join(', ')}`);
+		}
+		for (const metaError of metaRepair.errors) {
+			summary.errors.push(`Junction meta: ${metaError}`);
+		}
+
+		updatedSchema = await getSchema({ database });
 		const relationsService = new RelationsService({
 			knex: database,
 			schema: updatedSchema
@@ -249,6 +289,9 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 			const message = `tours.regions M2M junction incomplete: ${missingJunctionRelations.join(', ')}`;
 			summary.errors.push(message);
 		}
+
+		const uiGraphErrors = await validateToursRegionsM2mUiGraph(database as DatabaseLike, logger);
+		summary.errors.push(...uiGraphErrors);
 	}
 
 	try {
