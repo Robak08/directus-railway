@@ -1,0 +1,14 @@
+{
+	"name": "krakovanopas-backup",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"backup": "node src/index.js",
+		"restore:db": "node src/restore-db.js",
+		"restore:files": "node src/restore-files.js"
+	},
+	"dependencies": {
+		"@aws-sdk/client-s3": "^3.750.0"
+	}
+}
