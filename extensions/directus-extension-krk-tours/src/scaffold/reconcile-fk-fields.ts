@@ -1,4 +1,4 @@
-import { readColumnDataType } from './column-introspection.js';
+import { physicalTableExists, readColumnDataType } from './column-introspection.js';
 import { buildFieldPayloadForCreate } from './scaffold-field-payload.js';
 import type { DirectusStateField, ScaffoldLogger } from './types.js';
 
@@ -21,6 +21,9 @@ type KnexDatabase = {
 };
 
 async function countTableRows(database: KnexDatabase, table: string): Promise<number> {
+	if (!(await physicalTableExists(database, table))) {
+		return 0;
+	}
 	const row = (await database(table).count('* as count').first()) as { count?: string | number } | undefined;
 	const value = row?.count ?? 0;
 	return typeof value === 'string' ? Number.parseInt(value, 10) : Number(value);

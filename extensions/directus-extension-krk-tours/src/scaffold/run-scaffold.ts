@@ -14,6 +14,7 @@ import { validateToursRegionsJunctionRelations } from './validate-critical-relat
 import { validateToursRegionsM2mUiGraph } from './validate-m2m-ui-graph.js';
 import { applyTourPermissions } from './permissions.js';
 import { ensureFieldColumnExists, reconcileForeignKeyField } from './reconcile-fk-fields.js';
+import { removeOrphanedTourCollectionMetadata } from './remove-orphaned-tour-collections.js';
 import { repairSchemaFromDatabase } from './sql-schema-repair.js';
 import type {
 	DatabaseLike,
@@ -104,6 +105,17 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 			knex: database,
 			schema: await getSchema()
 		});
+
+		const orphanedRemoved = await removeOrphanedTourCollectionMetadata(
+			database as DatabaseLike,
+			collectionsService,
+			logger
+		);
+		if (orphanedRemoved.length > 0) {
+			logger.info(
+				`[krk-tours] Cleared orphaned tour metadata: ${orphanedRemoved.join(', ')}`
+			);
+		}
 
 		for (const collection of sortedCollections) {
 			try {

@@ -27,3 +27,21 @@ export async function readColumnDataType(
 
 	return row?.data_type ?? null;
 }
+
+export async function physicalTableExists(
+	database: unknown,
+	tableName: string,
+	tableSchema = 'public'
+): Promise<boolean> {
+	const knex = database as KnexLike;
+	const row = (await knex
+		.select('table_name')
+		.from('information_schema.tables')
+		.where({
+			table_schema: tableSchema,
+			table_name: tableName
+		})
+		.first()) as { table_name?: string } | undefined;
+
+	return Boolean(row?.table_name);
+}

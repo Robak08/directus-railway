@@ -131,6 +131,8 @@ DROP TABLE IF EXISTS tours CASCADE;
 
 Then run scaffold and seed as above.
 
+If you **only** ran `DROP TABLE` and scaffold returns `relation "tours" does not exist`, Directus still has rows in `directus_collections`. Either run the metadata `DELETE` block above, or use extension **1.0.10+** where scaffold removes orphaned tour collection metadata before recreate.
+
 ## Development
 
 `pnpm test` runs Vitest unit tests for relation repair helpers.
