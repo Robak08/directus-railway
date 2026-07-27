@@ -307,7 +307,7 @@ export const directusState: DirectusState = {
 				special: ['translations'],
 				interface: 'translations',
 				options: {
-					languageField: 'languages_code',
+					languageField: 'code',
 					languageDirectionField: 'direction',
 					defaultLanguage: 'fi-FI',
 					userLanguage: false
@@ -315,7 +315,7 @@ export const directusState: DirectusState = {
 				display: 'translations',
 				display_options: {
 					template: '{{title}}',
-					languageField: 'languages_code',
+					languageField: 'code',
 					defaultLanguage: 'fi-FI',
 					userLanguage: false
 				},
@@ -609,7 +609,7 @@ export const directusState: DirectusState = {
 				special: ['translations'],
 				interface: 'translations',
 				options: {
-					languageField: 'languages_code',
+					languageField: 'code',
 					defaultLanguage: 'fi-FI',
 					userLanguage: false
 				},

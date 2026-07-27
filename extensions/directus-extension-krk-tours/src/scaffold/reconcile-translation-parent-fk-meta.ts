@@ -118,6 +118,9 @@ function translationOptionsNeedRepair(
 		return true;
 	}
 	const existing = existingOptions as Record<string, unknown>;
+	if (existing.languageField !== desiredOptions.languageField) {
+		return true;
+	}
 	if (existing.userLanguage !== desiredOptions.userLanguage) {
 		return true;
 	}
