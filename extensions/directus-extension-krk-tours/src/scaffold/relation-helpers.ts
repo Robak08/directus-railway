@@ -238,7 +238,11 @@ export async function ensureOrRepairRelations(
 				continue;
 			}
 
-			await relationsService.updateOne(existing.id, prepareRelationData(relation));
+			await relationsService.updateOne(
+				relation.collection,
+				relation.field,
+				prepareRelationData(relation)
+			);
 			repaired++;
 			logger.info(`[krk-tours] Relation '${relationKey}' repaired`);
 		} catch (error: unknown) {

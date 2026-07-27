@@ -112,7 +112,7 @@ Scaffold checks `places_regions.id` is `uuid` before creating the junction. If `
 
 ### Studio save: removed tour steps reappear after save
 
-Directus defaults O2M **deselect** to `nullify` (clear parent FK). `tour_steps.tour_id` is **NOT NULL**, so nullify cannot detach removed steps. Extension **v1.0.14+** sets `one_deselect_action: 'delete'` on `tour_steps.tour_id` → `tours` and enables delete in the Steps list UI. Run `POST /krk-tours/scaffold` to repair the relation on existing installs.
+Directus defaults O2M **deselect** to `nullify` (clear parent FK). `tour_steps.tour_id` is **NOT NULL**, so nullify cannot detach removed steps. Extension sets `one_deselect_action: 'delete'` on `tour_steps.tour_id` → `tours`. Run `POST /krk-tours/scaffold` to repair (requires **v1.0.15+** for Directus 12 relation updates). Or SQL: `UPDATE directus_relations SET one_deselect_action = 'delete' WHERE many_collection = 'tour_steps' AND many_field = 'tour_id';`
 
 ### Studio save: `tour_id: Value can't be null` on `tours`
 

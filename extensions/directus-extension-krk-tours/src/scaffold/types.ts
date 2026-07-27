@@ -54,7 +54,11 @@ export type ScaffoldSummary = {
 
 export type RelationsServiceLike = {
 	createOne: (data: DirectusStateRelation) => Promise<unknown>;
-	updateOne: (primaryKey: number, data: DirectusStateRelation) => Promise<unknown>;
+	updateOne: (
+		collection: string,
+		field: string,
+		data: DirectusStateRelation
+	) => Promise<unknown>;
 };
 
 export type ExistingRelationRow = {
