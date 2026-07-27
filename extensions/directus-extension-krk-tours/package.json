@@ -2,7 +2,7 @@
 	"name": "directus-extension-krk-tours",
 	"description": "Scaffold tours (kierrokset) collections, permissions, and sample seed for Krakovan Opas Directus",
 	"icon": "route",
-	"version": "1.0.7",
+	"version": "1.0.8",
 	"keywords": [
 		"directus",
 		"directus-extension",
@@ -28,6 +28,11 @@
 				"type": "hook",
 				"name": "scaffold",
 				"source": "src/scaffold-hook/index.ts"
+			},
+			{
+				"type": "hook",
+				"name": "tours-items",
+				"source": "src/tours-items-hook/index.ts"
 			},
 			{
 				"type": "endpoint",

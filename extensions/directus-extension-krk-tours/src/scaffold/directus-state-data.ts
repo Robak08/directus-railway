@@ -512,6 +512,7 @@ export const directusState: DirectusState = {
 			meta: {
 				collection: 'tour_steps',
 				field: 'tour_id',
+				special: ['m2o'],
 				hidden: true,
 				sort: 2
 			}

@@ -104,6 +104,10 @@ Scaffold checks `places_regions.id` is `uuid` before creating the junction. If `
 
 **Existing DBs** created with integer `places_regions_id` or missing junction columns must be fixed manually (column type + M2O); re-scaffold will try to **create missing columns** and **recreate empty-table FK columns** as uuid before relations.
 
+### Studio save: `tour_id: Value can't be null` on `tours`
+
+When editing a tour with nested **Steps**, Directus may send steps without the hidden parent FK `tour_steps.tour_id`. From **v1.0.8+**, the `tours-items` hook injects the parent tour id on `tours.items.create` / `tours.items.update` before validation. Scaffold also reconciles `tour_steps.tour_id` field meta (`hidden`, `special: m2o`). Re-run `POST /krk-tours/scaffold` after upgrade if field meta was wrong.
+
 ## Development
 
 `pnpm test` runs Vitest unit tests for relation repair helpers.
