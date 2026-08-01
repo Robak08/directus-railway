@@ -1,89 +1,70 @@
 import { defineEndpoint } from '@directus/extensions-sdk';
-import MailerLite from '@mailerlite/mailerlite-nodejs';
-import dayjs from 'dayjs'
+import {
+	resolveCheckoutEmail,
+	subscribeGuidebookBuyerToMailerLite,
+	type StripeCheckoutSessionObject
+} from './mailerlite-guidebook.js';
+import { provisionCustomerFromCheckout } from './provision-customer.js';
 
-interface MailerLiteCustomField {
-	key: string;
-	label: { custom: string, type: string },
-	optional: true,
-	text: {
-		default_value: string | null,
-		maximum_length: number | null,
-		minimum_length: number | null,
-		value: string | null
-	},
-	type: string
-}
-export default defineEndpoint((router) => {
-	router.post('/guide-webhook', async (_req, res) => {
+type StripeWebhookEvent = {
+	type?: string;
+	data?: {
+		object?: StripeCheckoutSessionObject & {
+			payment_status?: string;
+			customer?: string | null;
+		};
+	};
+};
+
+const isCheckoutSessionCompleted = (event: StripeWebhookEvent): boolean => {
+	return event.type === 'checkout.session.completed';
+};
+
+const isPaidCheckoutSession = (
+	session: StripeCheckoutSessionObject & { payment_status?: string }
+): boolean => {
+	if (session.status === 'complete') {
+		return true;
+	}
+
+	return session.payment_status === 'paid';
+};
+
+export default defineEndpoint((router, { services, getSchema, logger }) => {
+	router.post('/guide-webhook', async (req, res) => {
 		try {
-			const data = _req.body;
-			const { status } = data?.data.object;
-			// TODO create stripe headers signature verification
-			if (data?.type === 'checkout.session.completed' && status === 'complete') {
-				// get name and email and add subscriber to mailerlite
-				// console.log("checkout.session.completed___", data?.data.object?.customer_details?.email)
-				if (!process.env.MAILERLITE_API_KEY) {
-					throw "Config err: MAILERLITE_API_KEY missing";
-				}
-				const customerDetails = data?.data?.object?.customer_details;
-				const email = customerDetails?.email;
-				const name = customerDetails?.name;
-				const buyersGroupId = "156806631449953435"; // guidebook sending group
-				const buyersVersionTwoGroupId = "179817636933142402";
-				const krakowTipsGroupId = "145957335472276790";
-				const muralsGroupId = '167510330590627092';
-				const mailerlite = new MailerLite({
-					api_key: process.env.MAILERLITE_API_KEY
-				});
+			const event = (req.body ?? {}) as StripeWebhookEvent;
+			const session = event.data?.object;
 
-				if (!email) {
-					throw "Missing customer email";
-				}
-
-				const splitName = typeof name === 'string' && name.trim().length > 0
-					? name.trim().split(/\s+/)
-					: [];
-				const mailerParams = {
-					email: email,
-					fields: {
-						name: splitName?.[0] || null,
-						last_name: splitName.length > 1 ? splitName.slice(1).join(' ') : null,
-					},
-					groups: [buyersVersionTwoGroupId, buyersGroupId, krakowTipsGroupId],
-					status: "active",
-					subscribed_at: dayjs().subtract(3, "hour").format("YYYY-MM-DD HH:mm:ss"),
-				};
-
-				const customFields: MailerLiteCustomField[] = data?.data.object?.custom_fields;
-				const bonusCodeField = customFields?.length > 0 ? customFields.find(c => c.key === 'bonus') : null;
-				if (bonusCodeField) {
-					const muralValues = ['muurali', 'muraali'];
-					if (bonusCodeField?.text?.value && muralValues.includes(bonusCodeField?.text?.value?.toLowerCase())) {
-						console.log("bonuscode", bonusCodeField?.text?.value?.toLowerCase())
-						mailerParams.groups.push(muralsGroupId);
-					}
-				}
-				mailerlite.subscribers
-					.createOrUpdate(mailerParams)
-					.then((response) => {
-						// console.log(response.data);
-						if (response) {
-							res.send({ received: true });
-						}
-					})
-					.catch((error) => {
-						if (error.response) console.log(error.response.data);
-						throw `Mailerlite subscriber error, ${email}`;
-					});
-				res.send({ received: true });
-			} else {
-				throw "Wrong payload - 403";
+			if (!session || !isCheckoutSessionCompleted(event) || !isPaidCheckoutSession(session)) {
+				throw new Error('Wrong payload - 403');
 			}
-		} catch (err: any) {
-			console.log('/guide-webhook err', err)
-			res.send({ received: true, mes: err });
+
+			const email = resolveCheckoutEmail(session);
+			if (!email) {
+				throw new Error('Missing customer email');
+			}
+
+			subscribeGuidebookBuyerToMailerLite(session).catch((error: unknown) => {
+				if ((error as { response?: { data?: unknown } }).response?.data) {
+					console.log((error as { response: { data: unknown } }).response.data);
+				}
+				console.log('/guide-webhook mailerlite err', error);
+			});
+
+			provisionCustomerFromCheckout({
+				session,
+				services: services as import('./provision-customer.js').DirectusServices,
+				getSchema,
+				logger
+			}).catch((provisionError: unknown) => {
+				logger.error('[krk-guide] User provisioning failed', provisionError);
+			});
+
+			res.send({ received: true });
+		} catch (err: unknown) {
+			console.log('/guide-webhook err', err);
+			res.send({ received: true, mes: String(err) });
 		}
 	});
-}
-);
+});

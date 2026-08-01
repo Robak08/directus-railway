@@ -37,6 +37,7 @@ COPY --from=extension-build --chown=node:node /extension-build/node_modules/@dir
 COPY --chown=node:node ./extensions/directus-extension-slugify-interface /directus/extensions/directus-extension-slugify-interface
 COPY --chown=node:node ./extensions/directus-extension-hook-user-email-subjects /directus/extensions/directus-extension-hook-user-email-subjects
 COPY --chown=node:node ./extensions/directus-extension-endpoint-krk-guide /directus/extensions/directus-extension-endpoint-krk-guide
+COPY --chown=node:node ./extensions/directus-extension-endpoint-krk-stripe /directus/extensions/directus-extension-endpoint-krk-stripe
 COPY --chown=node:node ./extensions/directus-extension-push-notification /directus/extensions/directus-extension-push-notification
 COPY --chown=node:node ./extensions/directus-extension-krk-tours /directus/extensions/directus-extension-krk-tours
 
