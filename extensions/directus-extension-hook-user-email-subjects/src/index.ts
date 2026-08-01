@@ -13,10 +13,10 @@ export default defineHook(({ filter }) => {
 
         switch (templateName) {
             case 'user-invitation':
-                input.subject = 'Kutsu Krakovan Opas -portaaliin';
+                input.subject = 'Tervetuloa Krakovan Oppaaseen';
                 break;
             case 'password-reset':
-                input.subject = 'Pyysi salasanan vaihtoa Krakovan Opas -portaalissa';
+                input.subject = 'Salasanan vaihto — Krakovan Opas';
                 break;
             default:
                 break;
