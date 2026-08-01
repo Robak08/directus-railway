@@ -56,11 +56,24 @@ export const splitCustomerName = (name: string | null | undefined): {
 	};
 };
 
+export const resolveUserNames = (
+	name: string | null | undefined,
+	email: string
+): { firstName: string; lastName: string | null } => {
+	const { firstName, lastName } = splitCustomerName(name);
+
+	if (firstName) {
+		return { firstName, lastName };
+	}
+
+	return { firstName: email, lastName: null };
+};
+
 export const buildMailerLiteSubscriberParams = (
 	session: StripeCheckoutSessionObject,
 	email: string
 ): MailerLiteSubscriberParams => {
-	const { firstName, lastName } = splitCustomerName(session.customer_details?.name);
+	const { firstName, lastName } = resolveUserNames(session.customer_details?.name, email);
 
 	const groups = [
 		MAILERLITE_GROUP_IDS.buyersVersionTwo,

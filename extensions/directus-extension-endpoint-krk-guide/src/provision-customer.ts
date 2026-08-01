@@ -1,4 +1,5 @@
 import type { Accountability } from '@directus/types';
+import { resolveUserNames } from './mailerlite-guidebook-payload.js';
 
 export const DEFAULT_INVITE_URL = 'https://app.krakovanopas.fi/luo-salasana';
 
@@ -28,6 +29,7 @@ export interface CheckoutProvisioningSession {
 	};
 	customer_email?: string | null;
 	customer?: string | null;
+	metadata?: Record<string, string | null | undefined> | null;
 }
 
 export interface DirectusServices {
@@ -104,6 +106,20 @@ export const shouldUpgradeProfile = (profile: CustomerProfileRecord | null): boo
 	return !isEntitledCustomerType(profile.customer_type);
 };
 
+const resolveCheckoutCustomerName = (session: CheckoutProvisioningSession): string | null => {
+	const fromDetails = session.customer_details?.name;
+	if (typeof fromDetails === 'string' && fromDetails.trim().length > 0) {
+		return fromDetails.trim();
+	}
+
+	const fromMetadata = session.metadata?.customer_name;
+	if (typeof fromMetadata === 'string' && fromMetadata.trim().length > 0) {
+		return fromMetadata.trim();
+	}
+
+	return null;
+};
+
 export const provisionCustomerFromCheckout = async (options: {
 	session: CheckoutProvisioningSession;
 	services: DirectusServices;
@@ -131,11 +147,8 @@ export const provisionCustomerFromCheckout = async (options: {
 		return;
 	}
 
-	const name = options.session.customer_details?.name;
-	const splitName =
-		typeof name === 'string' && name.trim().length > 0 ? name.trim().split(/\s+/) : [];
-	const firstName = splitName[0] ?? null;
-	const lastName = splitName.length > 1 ? splitName.slice(1).join(' ') : null;
+	const checkoutName = resolveCheckoutCustomerName(options.session);
+	const { firstName, lastName } = resolveUserNames(checkoutName, email);
 	const stripeCustomerId =
 		typeof options.session.customer === 'string' && options.session.customer.trim().length > 0
 			? options.session.customer.trim()
@@ -164,13 +177,31 @@ export const provisionCustomerFromCheckout = async (options: {
 			limit: 1
 		});
 		userId = invitedUsers[0]?.id ?? null;
+		if (userId) {
+			await usersService.updateOne(userId, {
+				first_name: firstName,
+				last_name: lastName
+			});
+		}
 		options.logger.info(`[krk-guide] Invited new customer user for ${email}`);
 	} else if (existingUser.status === 'invited') {
 		options.logger.info(`[krk-guide] User ${email} already invited; skipping duplicate invite`);
-	} else if (firstName || lastName) {
+		if (
+			existingUser.first_name !== firstName ||
+			(existingUser.last_name ?? null) !== lastName
+		) {
+			await usersService.updateOne(existingUser.id, {
+				first_name: firstName,
+				last_name: lastName
+			});
+		}
+	} else if (
+		existingUser.first_name !== firstName ||
+		(existingUser.last_name ?? null) !== lastName
+	) {
 		await usersService.updateOne(existingUser.id, {
-			first_name: firstName ?? existingUser.first_name,
-			last_name: lastName ?? existingUser.last_name
+			first_name: firstName,
+			last_name: lastName
 		});
 	}
 

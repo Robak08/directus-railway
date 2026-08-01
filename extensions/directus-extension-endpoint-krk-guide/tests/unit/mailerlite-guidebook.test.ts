@@ -3,6 +3,7 @@ import {
 	buildMailerLiteSubscriberParams,
 	MAILERLITE_GROUP_IDS,
 	resolveCheckoutEmail,
+	resolveUserNames,
 	splitCustomerName,
 	type StripeCheckoutSessionObject
 } from '../../src/mailerlite-guidebook-payload.ts';
@@ -30,6 +31,22 @@ describe('splitCustomerName', () => {
 	});
 });
 
+describe('resolveUserNames', () => {
+	it('uses parsed name when present', () => {
+		expect(resolveUserNames('Anna Virtanen', 'anna@example.com')).toEqual({
+			firstName: 'Anna',
+			lastName: 'Virtanen'
+		});
+	});
+
+	it('falls back to email when name is missing', () => {
+		expect(resolveUserNames(null, 'anna@example.com')).toEqual({
+			firstName: 'anna@example.com',
+			lastName: null
+		});
+	});
+});
+
 describe('buildMailerLiteSubscriberParams', () => {
 	const baseSession: StripeCheckoutSessionObject = {
 		customer_details: {
@@ -50,6 +67,15 @@ describe('buildMailerLiteSubscriberParams', () => {
 		expect(params.email).toBe('buyer@example.com');
 		expect(params.status).toBe('active');
 		expect(params.subscribed_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+	});
+
+	it('uses email as name when checkout name is missing', () => {
+		const params = buildMailerLiteSubscriberParams(
+			{ customer_details: { email: 'buyer@example.com' } },
+			'buyer@example.com'
+		);
+
+		expect(params.fields).toEqual({ name: 'buyer@example.com', last_name: null });
 	});
 
 	it('adds murals group for mural bonus code', () => {

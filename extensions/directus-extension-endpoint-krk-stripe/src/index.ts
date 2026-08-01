@@ -4,7 +4,6 @@ import Stripe from 'stripe';
 const DEFAULT_APP_ORIGIN = 'https://app.krakovanopas.fi';
 
 type CheckoutSessionBody = {
-	email?: string;
 	successUrl?: string;
 	cancelUrl?: string;
 	locale?: string;
@@ -20,8 +19,12 @@ const resolveAppOrigin = (): string => {
 
 const resolveCheckoutUrls = (body: CheckoutSessionBody): { successUrl: string; cancelUrl: string } => {
 	const origin = resolveAppOrigin();
-	const successUrl = isNonEmptyString(body.successUrl) ? body.successUrl.trim() : `${origin}/osto/onnistui?session_id={CHECKOUT_SESSION_ID}`;
-	const cancelUrl = isNonEmptyString(body.cancelUrl) ? body.cancelUrl.trim() : `${origin}/osto/peruutettu`;
+	const successUrl = isNonEmptyString(body.successUrl)
+		? body.successUrl.trim()
+		: `${origin}/osto/onnistui?session_id={CHECKOUT_SESSION_ID}`;
+	const cancelUrl = isNonEmptyString(body.cancelUrl)
+		? body.cancelUrl.trim()
+		: `${origin}/osto/peruutettu`;
 
 	return { successUrl, cancelUrl };
 };
@@ -43,7 +46,6 @@ export default defineEndpoint((router) => {
 
 		const body = (req.body ?? {}) as CheckoutSessionBody;
 		const { successUrl, cancelUrl } = resolveCheckoutUrls(body);
-		const email = isNonEmptyString(body.email) ? body.email.trim() : undefined;
 		const locale = isNonEmptyString(body.locale) ? body.locale.trim() : 'fi';
 
 		try {
@@ -54,7 +56,6 @@ export default defineEndpoint((router) => {
 				line_items: [{ price: priceId, quantity: 1 }],
 				success_url: successUrl,
 				cancel_url: cancelUrl,
-				customer_email: email,
 				locale: locale === 'fi' || locale === 'en' ? locale : 'fi',
 				metadata: {
 					source: 'app'
