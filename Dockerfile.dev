@@ -1,6 +1,6 @@
-# Local development image — Directus 12.1.1 with npm extensions baked in.
+# Local development image — Directus 12.2.0 with npm extensions baked in.
 # Custom extensions are mounted from ./extensions via docker-compose volumes.
-ARG DIRECTUS_VERSION=12.1.1
+ARG DIRECTUS_VERSION=12.2.0
 
 FROM node:22-alpine AS extension-build
 

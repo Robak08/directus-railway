@@ -1,5 +1,5 @@
-# Production image for Railway — Directus 12.1.1 with hardened multi-stage build
-ARG DIRECTUS_VERSION=12.1.1
+# Production image for Railway — Directus 12.2.0 with hardened multi-stage build
+ARG DIRECTUS_VERSION=12.2.0
 
 # Stage 1: install npm extensions and patch host ranges for v12
 FROM node:22-alpine AS extension-build

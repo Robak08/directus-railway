@@ -1,6 +1,14 @@
 # Marketing Payment Links and account provisioning
 
-Stripe Payment Links on the marketing site post to `POST /krk-guide/guide-webhook` on checkout completion.
+Stripe Payment Links on the marketing site and app checkout (`/osto`) post to `POST /krk-guide/guide-webhook` on checkout completion.
+
+## Webhook security and retries
+
+- Requires `STRIPE_VERIFICATION_SECRET` (Stripe Dashboard webhook signing secret, `whsec_…`).
+- The `directus-extension-hook-stripe-raw-body` hook captures the raw body for signature verification.
+- Unsigned or invalid signatures return **400**.
+- Non-`checkout.session.completed` events return **200** and are ignored.
+- MailerLite subscribe and user provisioning must succeed; failures return **500** so Stripe retries.
 
 ## PDF delivery (production-critical)
 
@@ -21,3 +29,11 @@ When `KRK_GUIDE_PROVISION_USERS=true` on Directus:
 Provisioning is skipped when email is missing (anonymous checkout). To provision accounts from marketing purchases, configure Payment Links to **require email** (and preferably name).
 
 Until the flag is enabled, marketing Payment Links behave as today: MailerLite only.
+
+## Recovering a buyer when invite email failed
+
+If provisioning created an `invited` user but SES/email failed (for example `Region is missing`):
+
+1. Fix email config (`EMAIL_SES_REGION` and credentials must reach the Directus container).
+2. In Directus admin, open the user and **resend the invitation**, or delete the invited user and run a new test purchase.
+3. A second checkout alone may not re-send mail when the user is already `invited`.

@@ -1,19 +1,19 @@
 {
-	"name": "krk-guide",
-	"description": "Stripe webhook + nodemailer email sending",
+	"name": "directus-extension-hook-stripe-raw-body",
+	"description": "Capture raw request body for Stripe webhook signature verification",
 	"icon": "extension",
-	"version": "1.4.0",
+	"version": "1.0.0",
 	"keywords": [
 		"directus",
 		"directus-extension",
-		"directus-extension-endpoint"
+		"directus-extension-hook"
 	],
 	"type": "module",
 	"files": [
 		"dist"
 	],
 	"directus:extension": {
-		"type": "endpoint",
+		"type": "hook",
 		"path": "dist/index.js",
 		"source": "src/index.ts",
 		"host": "^12.0.0"
@@ -22,21 +22,15 @@
 		"build": "directus-extension build",
 		"dev": "directus-extension build -w --no-minify",
 		"link": "directus-extension link",
-		"validate": "directus-extension validate",
-		"test": "vitest run",
-		"test:watch": "vitest"
+		"validate": "directus-extension validate"
 	},
 	"devDependencies": {
-		"@directus/errors": "^2.0.1",
 		"@directus/extensions-sdk": "18.0.1",
+		"@types/express": "^5.0.3",
 		"@types/node": "^22.15.21",
-		"@types/nodemailer": "^6.4.17",
-		"typescript": "^5.8.3",
-		"vitest": "^4.1.10"
+		"typescript": "^5.8.3"
 	},
 	"dependencies": {
-		"@mailerlite/mailerlite-nodejs": "^1.4.0",
-		"dayjs": "^1.11.13",
-		"stripe": "^18.0.0"
+		"express": "^4.21.2"
 	}
 }
