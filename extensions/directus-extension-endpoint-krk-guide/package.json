@@ -1,22 +1,36 @@
 {
 	"name": "krk-guide",
-	"description": "Stripe webhook + nodemailer email sending",
+	"description": "Stripe webhook, MailerLite delivery, and customer provisioning for Krakovan Opas",
 	"icon": "extension",
-	"version": "1.4.0",
+	"version": "1.5.0",
 	"keywords": [
 		"directus",
 		"directus-extension",
-		"directus-extension-endpoint"
+		"directus-custom-bundle"
 	],
 	"type": "module",
 	"files": [
 		"dist"
 	],
 	"directus:extension": {
-		"type": "endpoint",
-		"path": "dist/index.js",
-		"source": "src/index.ts",
-		"host": "^12.0.0"
+		"type": "bundle",
+		"host": "^12.0.0",
+		"path": {
+			"app": "dist/app.js",
+			"api": "dist/api.js"
+		},
+		"entries": [
+			{
+				"type": "hook",
+				"name": "stripe-raw-body",
+				"source": "src/stripe-raw-body-hook/index.ts"
+			},
+			{
+				"type": "endpoint",
+				"name": "krk-guide",
+				"source": "src/endpoint/index.ts"
+			}
+		]
 	},
 	"scripts": {
 		"build": "directus-extension build",
@@ -29,6 +43,7 @@
 	"devDependencies": {
 		"@directus/errors": "^2.0.1",
 		"@directus/extensions-sdk": "18.0.1",
+		"@types/express": "^5.0.3",
 		"@types/node": "^22.15.21",
 		"@types/nodemailer": "^6.4.17",
 		"typescript": "^5.8.3",
@@ -37,6 +52,7 @@
 	"dependencies": {
 		"@mailerlite/mailerlite-nodejs": "^1.4.0",
 		"dayjs": "^1.11.13",
+		"express": "^4.21.2",
 		"stripe": "^18.0.0"
 	}
 }

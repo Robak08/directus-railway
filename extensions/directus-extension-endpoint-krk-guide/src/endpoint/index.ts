@@ -4,8 +4,8 @@ import {
 	resolveCheckoutEmail,
 	subscribeGuidebookBuyerToMailerLite,
 	type StripeCheckoutSessionObject
-} from './mailerlite-guidebook.js';
-import { provisionCustomerFromCheckout } from './provision-customer.js';
+} from '../mailerlite-guidebook.js';
+import { provisionCustomerFromCheckout } from '../provision-customer.js';
 
 type StripeWebhookRequest = {
 	rawBody?: string;
@@ -112,7 +112,7 @@ export default defineEndpoint((router, { services, getSchema, logger }) => {
 			await subscribeGuidebookBuyerToMailerLite(session);
 			await provisionCustomerFromCheckout({
 				session,
-				services: services as import('./provision-customer.js').DirectusServices,
+				services: services as import('../provision-customer.js').DirectusServices,
 				getSchema,
 				logger
 			});

@@ -5,7 +5,7 @@ Stripe Payment Links on the marketing site and app checkout (`/osto`) post to `P
 ## Webhook security and retries
 
 - Requires `STRIPE_VERIFICATION_SECRET` (Stripe Dashboard webhook signing secret, `whsec_…`).
-- The `directus-extension-hook-stripe-raw-body` hook captures the raw body for signature verification.
+- The bundled `stripe-raw-body` hook captures the raw body for signature verification.
 - Unsigned or invalid signatures return **400**.
 - Non-`checkout.session.completed` events return **200** and are ignored.
 - MailerLite subscribe and user provisioning must succeed; failures return **500** so Stripe retries.
