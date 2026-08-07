@@ -131,7 +131,7 @@ function textField(collection, field, opts = {}) {
     meta: {
       collection,
       field,
-      interface: "input-rich-text-md",
+      interface: "input-multiline",
       sort,
       width: "full",
       note,
@@ -318,12 +318,14 @@ const fields = [
   aliasField("notification_broadcast", "target_roles", {
     special: ["m2m"],
     interfaceName: "list-m2m",
+    options: { enableCreate: false },
     sort: 6,
     note: "Target roles when target_type is roles",
   }),
   aliasField("notification_broadcast", "target_users", {
     special: ["m2m"],
     interfaceName: "list-m2m",
+    options: { enableCreate: false },
     sort: 7,
     note: "Target users when target_type is users",
   }),
@@ -406,12 +408,14 @@ const fields = [
     required: true,
     fk: { table: "notification_broadcast", column: "id" },
     hidden: true,
+    special: ["uuid", "m2o"],
   }),
   stringField("notification_broadcast_translations", "languages_code", {
     sort: 3,
     required: true,
     fk: { table: "languages", column: "code" },
     hidden: true,
+    special: ["m2o"],
   }),
   stringField("notification_broadcast_translations", "title", { required: true, sort: 4 }),
   textField("notification_broadcast_translations", "body", { required: true, sort: 5 }),

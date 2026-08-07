@@ -1,4 +1,5 @@
 import { defineHook } from "@directus/extensions-sdk";
+import { createItemsServiceOptions } from "../shared/create-items-service-options.js";
 import { resolveTranslation } from "../notification-trigger/resolve-translation.js";
 import type { NotificationBroadcast } from "./_types.js";
 import { resolveTargetUsers } from "./resolve-target.js";
@@ -13,14 +14,19 @@ export default defineHook(({ action }, { services, logger }) => {
 
   async function processBroadcast(
     broadcastId: string | number,
-    context: { schema: unknown; database: unknown },
+    context: {
+      schema: unknown;
+      database: unknown;
+      accountability?: unknown;
+    },
     triggerPayload?: Partial<NotificationBroadcast>,
   ): Promise<void> {
-    const { schema, database } = context;
-    const serviceOptions = {
-      schema: schema!,
-      knex: database,
-    } as ConstructorParameters<typeof ItemsService>[1];
+    const { schema, database, accountability } = context;
+    const serviceOptions = createItemsServiceOptions({
+      schema,
+      database,
+      accountability,
+    }) as ConstructorParameters<typeof ItemsService>[1];
 
     const broadcastService = new ItemsService(
       "notification_broadcast",
@@ -50,10 +56,12 @@ export default defineHook(({ action }, { services, logger }) => {
         ],
       })) as NotificationBroadcast;
     } catch (error: unknown) {
-      const err = error as { message?: string };
+      const err = error as { message?: string; name?: string; code?: string };
       logger.error("[Broadcast Processor] Failed to load broadcast", {
         broadcast_id: broadcastId,
-        error: err.message,
+        error: error instanceof Error ? error.message : String(error),
+        error_name: err.name,
+        error_code: err.code,
       });
       return;
     }

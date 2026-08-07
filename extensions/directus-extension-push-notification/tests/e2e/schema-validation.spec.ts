@@ -362,11 +362,46 @@ test.describe("Schema Validation - Collections, Fields e Relations (E2E)", () =>
     const langField = findField(fields, "languages_code");
     expect(langField.schema?.foreign_key_table).toBe("languages");
     expect(langField.schema?.foreign_key_column).toBe("code");
+    expect(langField.meta?.special).toContain("m2o");
 
     const langRelation = findRelation(relations, "languages_code");
     expect(langRelation.related_collection).toBe("languages");
     expect(langRelation.meta?.one_collection).toBe("languages");
     expect(langRelation.meta?.junction_field).toBe("user_notification_id");
+  });
+
+  test("notification body fields usam textarea (input-multiline)", async () => {
+    const userNotification = findField(
+      await getFields("user_notification"),
+      "body",
+    );
+    const userTranslation = findField(
+      await getFields("user_notification_translations"),
+      "body",
+    );
+    const broadcast = findField(
+      await getFields("notification_broadcast"),
+      "body",
+    );
+    const broadcastTranslation = findField(
+      await getFields("notification_broadcast_translations"),
+      "body",
+    );
+
+    expect(userNotification.meta?.interface).toBe("input-multiline");
+    expect(userTranslation.meta?.interface).toBe("input-multiline");
+    expect(broadcast.meta?.interface).toBe("input-multiline");
+    expect(broadcastTranslation.meta?.interface).toBe("input-multiline");
+  });
+
+  test("notification_broadcast target M2M fields desabilitam create", async () => {
+    const fields = await getFields("notification_broadcast");
+
+    const targetRoles = findField(fields, "target_roles");
+    const targetUsers = findField(fields, "target_users");
+
+    expect(targetRoles.meta?.options?.enableCreate).toBe(false);
+    expect(targetUsers.meta?.options?.enableCreate).toBe(false);
   });
 
   // ─── Consistência de tipos FK ──────────────────────────────────
@@ -631,5 +666,11 @@ test.describe("Schema Validation - Collections, Fields e Relations (E2E)", () =>
     expect(fieldNames).toContain("languages_code");
     expect(fieldNames).toContain("title");
     expect(fieldNames).toContain("body");
+
+    const languagesCode = findField(fields, "languages_code");
+    expect(languagesCode.meta?.special).toContain("m2o");
+
+    const broadcastId = findField(fields, "notification_broadcast_id");
+    expect(broadcastId.meta?.special).toContain("m2o");
   });
 });

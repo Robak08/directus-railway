@@ -1657,7 +1657,7 @@
         "collection": "user_notification",
         "field": "body",
         "special": null,
-        "interface": "input-rich-text-md",
+        "interface": "input-multiline",
         "options": null,
         "display": null,
         "display_options": null,
@@ -2596,7 +2596,8 @@
         "collection": "user_notification_translations",
         "field": "user_notification_id",
         "special": [
-          "uuid"
+          "uuid",
+          "m2o"
         ],
         "interface": null,
         "options": null,
@@ -2641,7 +2642,9 @@
       "meta": {
         "collection": "user_notification_translations",
         "field": "languages_code",
-        "special": null,
+        "special": [
+          "m2o"
+        ],
         "interface": null,
         "options": null,
         "display": null,
@@ -2739,7 +2742,7 @@
         "collection": "user_notification_translations",
         "field": "body",
         "special": null,
-        "interface": "input-rich-text-md",
+        "interface": "input-multiline",
         "options": null,
         "display": null,
         "display_options": null,
@@ -2832,7 +2835,7 @@
       "meta": {
         "collection": "notification_broadcast",
         "field": "body",
-        "interface": "input-rich-text-md",
+        "interface": "input-multiline",
         "sort": 3,
         "width": "full",
         "note": "Fallback body",
@@ -2920,7 +2923,9 @@
           "m2m"
         ],
         "interface": "list-m2m",
-        "options": null,
+        "options": {
+          "enableCreate": false
+        },
         "sort": 6,
         "width": "full",
         "note": "Target roles when target_type is roles"
@@ -2938,7 +2943,9 @@
           "m2m"
         ],
         "interface": "list-m2m",
-        "options": null,
+        "options": {
+          "enableCreate": false
+        },
         "sort": 7,
         "width": "full",
         "note": "Target users when target_type is users"
@@ -3461,7 +3468,8 @@
         "collection": "notification_broadcast_translations",
         "field": "notification_broadcast_id",
         "special": [
-          "uuid"
+          "uuid",
+          "m2o"
         ],
         "interface": "input",
         "options": null,
@@ -3492,7 +3500,9 @@
       "meta": {
         "collection": "notification_broadcast_translations",
         "field": "languages_code",
-        "special": null,
+        "special": [
+          "m2o"
+        ],
         "interface": "input",
         "options": null,
         "readonly": false,
@@ -3545,7 +3555,7 @@
       "meta": {
         "collection": "notification_broadcast_translations",
         "field": "body",
-        "interface": "input-rich-text-md",
+        "interface": "input-multiline",
         "sort": 5,
         "width": "full",
         "note": null,

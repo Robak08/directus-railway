@@ -1,5 +1,6 @@
 import { defineHook } from "@directus/extensions-sdk";
 import { readInnerFile } from "../utils/files.js";
+import { reconcileScaffoldMeta } from "./reconcile-scaffold-meta.js";
 
 type DirectusStateCollection = {
   collection: string;
@@ -458,6 +459,32 @@ export default defineHook(
         logger.error(
           `[DB Configuration] Failed to create ${failedRelations.length} relation(s): ${failedRelations.join("; ")}`,
         );
+      }
+
+      // STEP 3b: Repair drifted field meta on existing installs
+      if (fields.length > 0) {
+        const schemaForMeta = await getSchema({ database: database });
+        const fieldsServiceForMeta = new FieldsService({
+          knex: database,
+          schema: schemaForMeta,
+        });
+
+        const metaRepair = await reconcileScaffoldMeta(
+          database,
+          fieldsServiceForMeta,
+          fields,
+          logger,
+        );
+
+        if (metaRepair.repaired.length > 0) {
+          logger.info(
+            `[DB Configuration] Repaired ${metaRepair.repaired.length} field meta(s): ${metaRepair.repaired.join(", ")}`,
+          );
+        }
+
+        for (const metaError of metaRepair.errors) {
+          logger.warn(`[DB Configuration] Field meta repair failed: ${metaError}`);
+        }
       }
 
       // STEP 4: Populate languages collection with default languages

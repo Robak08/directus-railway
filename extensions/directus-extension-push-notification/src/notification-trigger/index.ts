@@ -1,5 +1,6 @@
 import { defineHook } from "@directus/extensions-sdk";
 import webpush from "web-push";
+import { createItemsServiceOptions } from "../shared/create-items-service-options.js";
 import {
   resolveVapidConfig,
   resolveVapidSubjectWithFallback,
@@ -36,7 +37,7 @@ export default defineHook(({ filter, action }, { services, logger, env }) => {
     return payload;
   });
 
-  action("items.create", async (meta, { schema, database }) => {
+  action("items.create", async (meta, { schema, database, accountability }) => {
     try {
       logger.debug(
         `[Notification Trigger] Action items.create fired for collection: ${meta.collection}`,
@@ -101,19 +102,19 @@ export default defineHook(({ filter, action }, { services, logger, env }) => {
 
       logger.info("[Notification Trigger] VAPID configured successfully");
 
+      const serviceOptions = createItemsServiceOptions({
+        schema,
+        database,
+        accountability,
+      }) as ConstructorParameters<typeof ItemsService>[1];
+
       // Buscar usuário destinatário com configurações de push
-      const usersService = new ItemsService("directus_users", {
-        schema: schema!,
-        knex: database,
-      });
-      const subscriptionsService = new ItemsService("push_subscription", {
-        schema: schema!,
-        knex: database,
-      });
-      const deliveryService = new ItemsService("push_delivery", {
-        schema: schema!,
-        knex: database,
-      });
+      const usersService = new ItemsService("directus_users", serviceOptions);
+      const subscriptionsService = new ItemsService(
+        "push_subscription",
+        serviceOptions,
+      );
+      const deliveryService = new ItemsService("push_delivery", serviceOptions);
 
       const user = await usersService.readOne(notification.user, {
         fields: ["id", "push_enabled", "language"],
@@ -139,10 +140,7 @@ export default defineHook(({ filter, action }, { services, logger, env }) => {
       // Buscar traduções da notificação
       const translationsService = new ItemsService(
         "user_notification_translations",
-        {
-          schema: schema!,
-          knex: database,
-        },
+        serviceOptions,
       );
 
       let translations: Array<{
