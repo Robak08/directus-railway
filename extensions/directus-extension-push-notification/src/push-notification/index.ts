@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { defineEndpoint } from "@directus/extensions-sdk";
 import webPush from "web-push";
+import { resolveVapidConfig } from "../shared/resolve-vapid-config.js";
 import type {
   PushSubscriptionData,
   RegisterSubscriptionRequest,
@@ -18,21 +19,18 @@ export default defineEndpoint(
   async (router, { services, database, getSchema, env, logger }) => {
     const { ItemsService } = services;
 
-    // Configure VAPID keys only if they are provided
-    if (env.PUSH_PUBLIC_VAPID_KEY && env.PUSH_PRIVATE_VAPID_KEY) {
+    const vapidConfig = resolveVapidConfig(env, process.env);
+
+    if (vapidConfig) {
       webPush.setVapidDetails(
-        env.PUSH_VAPID_SUBJECT
-          ? env.PUSH_VAPID_SUBJECT
-          : env.PUBLIC_URL?.startsWith("http://")
-            ? "mailto:admin@example.com"
-            : env.PUBLIC_URL || "mailto:admin@example.com",
-        env.PUSH_PUBLIC_VAPID_KEY,
-        env.PUSH_PRIVATE_VAPID_KEY,
+        vapidConfig.subject,
+        vapidConfig.publicKey,
+        vapidConfig.privateKey,
       );
       logger.info("[Push Notification] VAPID keys configured successfully");
     } else {
       logger.warn(
-        "[Push Notification] ⚠️  VAPID keys not configured. Push notifications will not work. Set PUSH_PUBLIC_VAPID_KEY and PUSH_PRIVATE_VAPID_KEY environment variables.",
+        "[Push Notification] ⚠️  VAPID keys not configured. Push notifications will not work. Set PUSH_PUBLIC_VAPID_KEY/PUSH_PRIVATE_VAPID_KEY or VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY environment variables.",
       );
     }
 
