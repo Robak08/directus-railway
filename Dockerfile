@@ -46,12 +46,5 @@ COPY --chown=node:node ./extensions/directus-extension-wysiwyg-source-drawer /di
 
 COPY --chown=node:node ./templates /directus/templates
 COPY --chown=node:node ./config.cjs /directus/config.cjs
-COPY --chown=node:node ./entrypoint.sh /directus/entrypoint.sh
 
 WORKDIR /directus
-
-USER root
-RUN chmod +x ./entrypoint.sh
-USER node
-
-ENTRYPOINT ["./entrypoint.sh"]
