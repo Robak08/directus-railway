@@ -34,13 +34,21 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    pull_policy: always
+      pull: true
+      args:
+        DIRECTUS_VERSION: "12.3.1"
     ports:
       - 8055:8055
     volumes:
       - ./database:/directus/database
       - ./uploads:/directus/uploads
-      - ./extensions:/directus/extensions
+      - ./extensions/directus-extension-slugify-interface:/directus/extensions/directus-extension-slugify-interface
+      - ./extensions/directus-extension-hook-user-email-subjects:/directus/extensions/directus-extension-hook-user-email-subjects
+      - ./extensions/directus-extension-endpoint-krk-guide:/directus/extensions/directus-extension-endpoint-krk-guide
+      - ./extensions/directus-extension-endpoint-krk-stripe:/directus/extensions/directus-extension-endpoint-krk-stripe
+      - ./extensions/directus-extension-push-notification:/directus/extensions/directus-extension-push-notification
+      - ./extensions/directus-extension-krk-tours:/directus/extensions/directus-extension-krk-tours
+      - ./extensions/directus-extension-wysiwyg-source-drawer:/directus/extensions/directus-extension-wysiwyg-source-drawer
       - ./templates:/directus/templates
       - ./scripts:/directus/scripts
       - ./snapshots:/directus/snapshots

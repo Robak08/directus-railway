@@ -1,5 +1,5 @@
-# Production image for Railway — Directus 12.2.0 with hardened multi-stage build
-ARG DIRECTUS_VERSION=12.2.0
+# Production image for Railway — Directus 12.3.1 with hardened multi-stage build
+ARG DIRECTUS_VERSION=12.3.1
 
 # Stage 1: install npm extensions and patch host ranges for v12
 FROM node:22-alpine AS extension-build
@@ -18,7 +18,8 @@ RUN echo '{"name":"extension-build","private":true}' > package.json \
 		@directus-labs/simple-list-interface@1.0.0 \
 		@directus-labs/migration-bundle@1.2.0 \
 		directus-extension-sync@3.0.6 \
-		@directus-labs/super-header-interface@1.2.0
+		@directus-labs/super-header-interface@1.2.0 \
+		@directus-labs/seo-plugin@1.1.1
 
 COPY scripts/patch-extension-hosts.mjs ./scripts/patch-extension-hosts.mjs
 RUN node ./scripts/patch-extension-hosts.mjs /extension-build/node_modules
@@ -33,6 +34,7 @@ COPY --from=extension-build --chown=node:node /extension-build/node_modules/@dir
 COPY --from=extension-build --chown=node:node /extension-build/node_modules/@directus-labs/migration-bundle /directus/extensions/directus-labs-migration-bundle
 COPY --from=extension-build --chown=node:node /extension-build/node_modules/directus-extension-sync /directus/extensions/directus-extension-sync
 COPY --from=extension-build --chown=node:node /extension-build/node_modules/@directus-labs/super-header-interface /directus/extensions/directus-labs-super-header-interface
+COPY --from=extension-build --chown=node:node /extension-build/node_modules/@directus-labs/seo-plugin /directus/extensions/directus-labs-seo-plugin
 
 COPY --chown=node:node ./extensions/directus-extension-slugify-interface /directus/extensions/directus-extension-slugify-interface
 COPY --chown=node:node ./extensions/directus-extension-hook-user-email-subjects /directus/extensions/directus-extension-hook-user-email-subjects
@@ -40,6 +42,7 @@ COPY --chown=node:node ./extensions/directus-extension-endpoint-krk-guide /direc
 COPY --chown=node:node ./extensions/directus-extension-endpoint-krk-stripe /directus/extensions/directus-extension-endpoint-krk-stripe
 COPY --chown=node:node ./extensions/directus-extension-push-notification /directus/extensions/directus-extension-push-notification
 COPY --chown=node:node ./extensions/directus-extension-krk-tours /directus/extensions/directus-extension-krk-tours
+COPY --chown=node:node ./extensions/directus-extension-wysiwyg-source-drawer /directus/extensions/directus-extension-wysiwyg-source-drawer
 
 COPY --chown=node:node ./templates /directus/templates
 COPY --chown=node:node ./config.cjs /directus/config.cjs

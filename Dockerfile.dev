@@ -1,6 +1,6 @@
-# Local development image — Directus 12.2.0 with npm extensions baked in.
+# Local development image — Directus 12.3.1 with npm extensions baked in.
 # Custom extensions are mounted from ./extensions via docker-compose volumes.
-ARG DIRECTUS_VERSION=12.2.0
+ARG DIRECTUS_VERSION=12.3.1
 
 FROM node:22-alpine AS extension-build
 
@@ -16,7 +16,9 @@ RUN echo '{"name":"extension-build","private":true}' > package.json \
 		directus-extension-upsert@1.0.5 \
 		directus-extension-flexible-editor@1.8.4 \
 		@directus-labs/simple-list-interface@1.0.0 \
-		@directus-labs/migration-bundle@1.2.0
+		@directus-labs/migration-bundle@1.2.0 \
+		@directus-labs/super-header-interface@1.2.0 \
+		@directus-labs/seo-plugin@1.1.1
 
 COPY scripts/patch-extension-hosts.mjs ./scripts/patch-extension-hosts.mjs
 RUN node ./scripts/patch-extension-hosts.mjs /extension-build/node_modules
@@ -28,3 +30,5 @@ COPY --from=extension-build --chown=node:node /extension-build/node_modules/dire
 COPY --from=extension-build --chown=node:node /extension-build/node_modules/directus-extension-flexible-editor /directus/extensions/directus-extension-flexible-editor
 COPY --from=extension-build --chown=node:node /extension-build/node_modules/@directus-labs/simple-list-interface /directus/extensions/directus-labs-simple-list-interface
 COPY --from=extension-build --chown=node:node /extension-build/node_modules/@directus-labs/migration-bundle /directus/extensions/directus-labs-migration-bundle
+COPY --from=extension-build --chown=node:node /extension-build/node_modules/@directus-labs/super-header-interface /directus/extensions/directus-labs-super-header-interface
+COPY --from=extension-build --chown=node:node /extension-build/node_modules/@directus-labs/seo-plugin /directus/extensions/directus-labs-seo-plugin
