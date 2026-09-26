@@ -206,9 +206,6 @@ export const fulfillGuidebookGrantFromCheckout = async (params: {
 	const payload = {
 		can_catalog: projection.can_catalog,
 		can_pdf: projection.can_pdf,
-		catalog_until: projection.catalog_until,
-		pdf_until: projection.pdf_until,
-		grant_count: projection.grant_count,
 		projection_version: 1,
 		reconciled_at: new Date().toISOString()
 	};

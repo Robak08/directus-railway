@@ -115,9 +115,6 @@ export const rebuildAccessForUser = async (params: {
 			guidebook_id: projection.guidebook_id,
 			can_catalog: projection.can_catalog,
 			can_pdf: projection.can_pdf,
-			catalog_until: projection.catalog_until,
-			pdf_until: projection.pdf_until,
-			grant_count: projection.grant_count,
 			projection_version: 1,
 			reconciled_at: new Date().toISOString()
 		});
@@ -167,7 +164,10 @@ export const rebuildAccessForUserGuidebook = async (params: {
 
 	if (existing.length === 0) {
 		await accessService.createOne({
-			...projection,
+			user_id: projection.user_id,
+			guidebook_id: projection.guidebook_id,
+			can_catalog: projection.can_catalog,
+			can_pdf: projection.can_pdf,
 			projection_version: 1,
 			reconciled_at: new Date().toISOString()
 		});
@@ -177,9 +177,6 @@ export const rebuildAccessForUserGuidebook = async (params: {
 	await accessService.updateOne(existing[0].id, {
 		can_catalog: projection.can_catalog,
 		can_pdf: projection.can_pdf,
-		catalog_until: projection.catalog_until,
-		pdf_until: projection.pdf_until,
-		grant_count: projection.grant_count,
 		projection_version: 1,
 		reconciled_at: new Date().toISOString()
 	});

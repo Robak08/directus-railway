@@ -96,59 +96,67 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 	});
 
 	router.get('/:slug/branding', async (req, res) => {
-		const guidebook = await loadPublishedGuidebookBySlug({
-			services,
-			getSchema,
-			slug: req.params.slug
-		});
-		if (!guidebook) {
-			res.status(404).send({ error: 'Guidebook not found' });
-			return;
-		}
+		try {
+			const guidebook = await loadPublishedGuidebookBySlug({
+				services,
+				getSchema,
+				slug: req.params.slug
+			});
+			if (!guidebook) {
+				res.status(404).send({ error: 'Guidebook not found' });
+				return;
+			}
 
-		const schema = await getSchema();
-		const items = new services.ItemsService('guidebooks', {
-			schema,
-			accountability: createServiceAccountability()
-		});
-		const row = await items.readOne(guidebook.id, {
-			fields: [
-				'id',
-				'slug',
-				'title',
-				'daisy_theme',
-				'marketing_url',
-				'seo_title',
-				'seo_description',
-				'pdf_version',
-				'pdf_updated',
-				'destination_id.timezone',
-				'destination_id.map_center',
-				'destination_id.weather_latitude',
-				'destination_id.weather_longitude'
-			]
-		});
-		res.send(row);
+			const schema = await getSchema();
+			const items = new services.ItemsService('guidebooks', {
+				schema,
+				accountability: createServiceAccountability()
+			});
+			const row = await items.readOne(guidebook.id, {
+				fields: [
+					'id',
+					'slug',
+					'title',
+					'daisy_theme',
+					'marketing_url',
+					'seo_title',
+					'seo_description',
+					'pdf_version',
+					'pdf_updated'
+				]
+			});
+			res.send(row);
+		} catch (error: unknown) {
+			const err = error as Error;
+			log.error(`[krk-guidebooks] /${req.params.slug}/branding failed: ${err.message}`);
+			res.status(500).send({ error: 'Failed to load guidebook branding' });
+		}
 	});
 
 	router.get('/:slug/calendar', async (req, res) => {
-		const guidebook = await loadPublishedGuidebookBySlug({
-			services,
-			getSchema,
-			slug: req.params.slug
-		});
-		if (!guidebook) {
-			res.status(404).send({ error: 'Guidebook not found' });
-			return;
-		}
+		try {
+			const guidebook = await loadPublishedGuidebookBySlug({
+				services,
+				getSchema,
+				slug: req.params.slug
+			});
+			if (!guidebook) {
+				res.status(404).send({ error: 'Guidebook not found' });
+				return;
+			}
 
-		const payload = await loadGuidebookCalendarPayload({
-			services,
-			getSchema,
-			guidebookId: guidebook.id
-		});
-		res.setHeader('Cache-Control', 'public, max-age=300');
-		res.send(payload);
+			const payload = await loadGuidebookCalendarPayload({
+				services,
+				getSchema,
+				guidebookId: guidebook.id
+			});
+			res.setHeader('Cache-Control', 'public, max-age=300');
+			res.send(payload);
+		} catch (error: unknown) {
+			const err = error as Error;
+			log.error(`[krk-guidebooks] /${req.params.slug}/calendar failed: ${err.message}`);
+			res.status(500).send({ error: 'Failed to load guidebook calendar' });
+		}
 	});
 
 	router.get('/me/access', async (req, res) => {
@@ -164,6 +172,7 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 				filter: { user_id: { _eq: req.accountability!.user } },
 				fields: [
 					'guidebook_id',
+					'guidebook_id.id',
 					'can_catalog',
 					'can_pdf',
 					'guidebook_id.slug',
@@ -183,45 +192,51 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 	router.get('/:slug/pdf', async (req, res) => {
 		if (!requireUser(req, res)) return;
 
-		const guidebook = await loadPublishedGuidebookBySlug({
-			services,
-			getSchema,
-			slug: req.params.slug
-		});
-		if (!guidebook) {
-			res.status(404).send({ error: 'Guidebook not found' });
-			return;
+		try {
+			const guidebook = await loadPublishedGuidebookBySlug({
+				services,
+				getSchema,
+				slug: req.params.slug
+			});
+			if (!guidebook) {
+				res.status(404).send({ error: 'Guidebook not found' });
+				return;
+			}
+
+			const allowed = await userHasPdfAccess({
+				services,
+				getSchema,
+				userId: req.accountability!.user!,
+				guidebookId: guidebook.id
+			});
+			if (!allowed) {
+				res.status(403).send({ error: 'PDF access not granted for this guidebook' });
+				return;
+			}
+
+			const schema = await getSchema();
+			const items = new services.ItemsService('guidebooks', {
+				schema,
+				accountability: createServiceAccountability()
+			});
+			const row = (await items.readOne(guidebook.id, {
+				fields: ['pdf_file']
+			})) as { pdf_file?: string | null };
+
+			if (!row.pdf_file) {
+				res.status(404).send({ error: 'PDF not configured' });
+				return;
+			}
+
+			res.setHeader('Cache-Control', 'private, no-store');
+			res.send({
+				fileId: row.pdf_file,
+				downloadPath: `/assets/${row.pdf_file}?download`
+			});
+		} catch (error: unknown) {
+			const err = error as Error;
+			log.error(`[krk-guidebooks] /${req.params.slug}/pdf failed: ${err.message}`);
+			res.status(500).send({ error: 'Failed to load guidebook PDF metadata' });
 		}
-
-		const allowed = await userHasPdfAccess({
-			services,
-			getSchema,
-			userId: req.accountability!.user!,
-			guidebookId: guidebook.id
-		});
-		if (!allowed) {
-			res.status(403).send({ error: 'PDF access not granted for this guidebook' });
-			return;
-		}
-
-		const schema = await getSchema();
-		const items = new services.ItemsService('guidebooks', {
-			schema,
-			accountability: createServiceAccountability()
-		});
-		const row = (await items.readOne(guidebook.id, {
-			fields: ['pdf_file']
-		})) as { pdf_file?: string | null };
-
-		if (!row.pdf_file) {
-			res.status(404).send({ error: 'PDF not configured' });
-			return;
-		}
-
-		res.setHeader('Cache-Control', 'private, no-store');
-		res.send({
-			fileId: row.pdf_file,
-			downloadPath: `/assets/${row.pdf_file}?download`
-		});
 	});
 });
