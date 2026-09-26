@@ -287,6 +287,13 @@ async function applyViaPolicies(database: PermissionsContext['database'], logger
 export async function applyTourPermissions(context: PermissionsContext): Promise<number> {
 	const { database, logger } = context;
 
+	if (process.env.KRK_TOURS_BROAD_PERMISSIONS !== 'true') {
+		logger.info(
+			'[krk-tours] Skipping broad tour permission clone; guidebooks migration owns customer catalog policy'
+		);
+		return 0;
+	}
+
 	const hasPermissionsTable = await database.schema.hasTable('directus_permissions');
 	if (!hasPermissionsTable) {
 		logger.warn('[krk-tours] directus_permissions table missing; skip permissions');

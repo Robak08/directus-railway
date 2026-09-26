@@ -1,0 +1,12 @@
+{
+	"name": "@krk/guidebooks-core",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./access": "./src/access.ts",
+		"./commerce": "./src/commerce.ts",
+		"./config": "./src/migration-config.ts"
+	}
+}

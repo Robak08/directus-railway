@@ -161,7 +161,7 @@ export const directusState: DirectusState = {
 				collection: 'tours_places_regions',
 				icon: 'import_export',
 				color: TOUR_COLLECTION_COLOR,
-				note: 'Tours tagged with purchasable regions',
+				note: 'Tours tagged with destination regions included in guidebooks',
 				hidden: true,
 				singleton: false,
 				translations: [

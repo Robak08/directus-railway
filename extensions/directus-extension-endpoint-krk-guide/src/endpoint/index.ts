@@ -6,6 +6,12 @@ import {
 	type StripeCheckoutSessionObject
 } from '../mailerlite-guidebook.js';
 import { provisionCustomerFromCheckout } from '../provision-customer.js';
+import {
+	fulfillGuidebookGrantFromCheckout,
+	recordStripeWebhookEvent,
+	resolveDirectusUserIdForSession,
+	resolveOfferForSession
+} from '../guidebook-grant-fulfillment.js';
 
 type StripeWebhookRequest = {
 	rawBody?: string;
@@ -27,11 +33,13 @@ const isCheckoutSessionCompleted = (event: Stripe.Event): event is Stripe.Event 
 };
 
 const isPaidCheckoutSession = (session: StripeCheckoutSession): boolean => {
-	if (session.status === 'complete') {
+	if (session.payment_status === 'paid') {
 		return true;
 	}
-
-	return session.payment_status === 'paid';
+	if (session.status === 'complete') {
+		return session.payment_status !== 'unpaid';
+	}
+	return false;
 };
 
 const resolveWebhookSecret = (): string | null => {
@@ -109,6 +117,18 @@ export default defineEndpoint((router, { services, getSchema, logger }) => {
 		}
 
 		try {
+			const ledger = await recordStripeWebhookEvent({
+				services: services as import('../guidebook-grant-fulfillment.js').GuideWebhookServices,
+				getSchema,
+				stripeEventId: event.id,
+				eventType: event.type
+			});
+
+			if (ledger === 'duplicate') {
+				logger.info('[krk-guide] Duplicate Stripe event; skipping side effects');
+				return res.send({ received: true, duplicate: true });
+			}
+
 			await subscribeGuidebookBuyerToMailerLite(session);
 			await provisionCustomerFromCheckout({
 				session,
@@ -116,6 +136,32 @@ export default defineEndpoint((router, { services, getSchema, logger }) => {
 				getSchema,
 				logger
 			});
+
+			const offer = await resolveOfferForSession({
+				services: services as import('../guidebook-grant-fulfillment.js').GuideWebhookServices,
+				getSchema,
+				session
+			});
+
+			const userId = await resolveDirectusUserIdForSession({
+				services: services as import('../guidebook-grant-fulfillment.js').GuideWebhookServices,
+				getSchema,
+				session,
+				email
+			});
+
+			if (offer && userId) {
+				await fulfillGuidebookGrantFromCheckout({
+					services: services as import('../guidebook-grant-fulfillment.js').GuideWebhookServices,
+					getSchema,
+					session,
+					userId,
+					offer
+				});
+			} else {
+				logger.warn('[krk-guide] Skipped grant projection (missing offer or user binding)');
+			}
+
 			return res.send({ received: true });
 		} catch (error: unknown) {
 			logger.error('[krk-guide] Webhook fulfillment failed', error);

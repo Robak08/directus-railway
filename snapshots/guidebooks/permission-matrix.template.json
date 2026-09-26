@@ -1,0 +1,34 @@
+{
+	"version": 1,
+	"notes": "Inventory template for replace-broad-permissions. Export live directus_permissions and directus_access before cutover.",
+	"public": {
+		"guidebooks": ["read:published branding fields only"],
+		"events": [],
+		"places": []
+	},
+	"customer": {
+		"customer_guidebook_access": ["read:own rows"],
+		"customer_guidebook_grants": [],
+		"guidebooks": ["read:published branding fields"],
+		"catalog_via_policies": [
+			"places",
+			"events",
+			"tours",
+			"tour_steps",
+			"tours_translations",
+			"tips",
+			"guidebooks_places",
+			"guidebooks_events",
+			"guidebooks_tours",
+			"guidebooks_places_regions",
+			"tips_guidebooks"
+		]
+	},
+	"editor": {
+		"membership": "editor_guidebooks junction (future)",
+		"writes": "assigned guidebooks only"
+	},
+	"removedBroadReads": [
+		"krk-tours cloned places read permissions with permissions:null"
+	]
+}
