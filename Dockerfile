@@ -1,5 +1,5 @@
-# Production image for Railway — Directus 12.3.1 with hardened multi-stage build
-ARG DIRECTUS_VERSION=12.3.1
+# Production image for Railway — Directus 12.4.1 with hardened multi-stage build
+ARG DIRECTUS_VERSION=12.4.1
 
 # Stage 1: install npm extensions and patch host ranges for v12
 FROM node:22-alpine AS extension-build
@@ -42,6 +42,7 @@ COPY --chown=node:node ./extensions/directus-extension-endpoint-krk-guide /direc
 COPY --chown=node:node ./extensions/directus-extension-endpoint-krk-stripe /directus/extensions/directus-extension-endpoint-krk-stripe
 COPY --chown=node:node ./extensions/directus-extension-push-notification /directus/extensions/directus-extension-push-notification
 COPY --chown=node:node ./extensions/directus-extension-krk-tours /directus/extensions/directus-extension-krk-tours
+COPY --chown=node:node ./extensions/directus-extension-krk-guidebooks /directus/extensions/directus-extension-krk-guidebooks
 COPY --chown=node:node ./extensions/directus-extension-wysiwyg-source-drawer /directus/extensions/directus-extension-wysiwyg-source-drawer
 
 COPY --chown=node:node ./templates /directus/templates

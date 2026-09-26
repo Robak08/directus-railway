@@ -153,26 +153,31 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 
 	router.get('/me/access', async (req, res) => {
 		if (!requireUser(req, res)) return;
-		const schema = await getSchema();
-		const items = new services.ItemsService('customer_guidebook_access', {
-			schema,
-			accountability: req.accountability
-		});
-		const rows = await items.readByQuery({
-			filter: { user_id: { _eq: req.accountability!.user } },
-			fields: [
-				'guidebook_id',
-				'can_catalog',
-				'can_pdf',
-				'catalog_until',
-				'pdf_until',
-				'guidebook_id.slug',
-				'guidebook_id.title',
-				'guidebook_id.daisy_theme'
-			],
-			limit: -1
-		});
-		res.send({ access: rows });
+
+		try {
+			const schema = await getSchema();
+			const items = new services.ItemsService('customer_guidebook_access', {
+				schema,
+				accountability: req.accountability
+			});
+			const rows = await items.readByQuery({
+				filter: { user_id: { _eq: req.accountability!.user } },
+				fields: [
+					'guidebook_id',
+					'can_catalog',
+					'can_pdf',
+					'guidebook_id.slug',
+					'guidebook_id.title',
+					'guidebook_id.daisy_theme'
+				],
+				limit: -1
+			});
+			res.send({ access: rows });
+		} catch (error: unknown) {
+			const err = error as Error;
+			log.error(`[krk-guidebooks] /me/access failed: ${err.message}`);
+			res.status(500).send({ error: 'Failed to load guidebook access' });
+		}
 	});
 
 	router.get('/:slug/pdf', async (req, res) => {

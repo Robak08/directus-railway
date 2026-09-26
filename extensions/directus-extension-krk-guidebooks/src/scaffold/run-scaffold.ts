@@ -131,6 +131,18 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 
 	if (relations.length > 0) {
 		await repairSchemaFromDatabase(database, fields, logger);
+
+		const bogusGuidebookAliasFields = ['places', 'events', 'tours', 'places_regions', 'tips'];
+		for (const field of bogusGuidebookAliasFields) {
+			try {
+				await database('directus_relations')
+					.where({ many_collection: 'guidebooks', many_field: field })
+					.delete();
+			} catch {
+				// ignore cleanup failures
+			}
+		}
+
 		let updatedSchema = await getSchema({ database });
 		const fieldsServiceForRelations = new FieldsService({
 			knex: database,
@@ -155,6 +167,7 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 		});
 
 		const relationResult = await ensureOrRepairRelations(
+			database as DatabaseLike,
 			relationsService,
 			relations,
 			logger
@@ -164,8 +177,12 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 		summary.relationsUnchanged += relationResult.unchanged;
 		summary.failedRelations.push(...relationResult.failed);
 
-		const validationErrors = validateRelations(relations);
-		summary.errors.push(...validationErrors);
+		const missingRelations = await validateRelations(database as DatabaseLike, relations);
+		if (missingRelations.length > 0) {
+			summary.errors.push(
+				`Missing relations after scaffold: ${missingRelations.join(', ')}`
+			);
+		}
 	}
 
 	return summary;

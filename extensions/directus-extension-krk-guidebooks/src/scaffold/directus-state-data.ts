@@ -90,6 +90,29 @@ const uuidFk = (
 	}
 });
 
+const m2mAliasField = (
+	collection: string,
+	field: string,
+	template: string,
+	sort: number,
+	note?: string
+) => ({
+	collection,
+	field,
+	type: 'alias',
+	schema: null,
+	meta: {
+		collection,
+		field,
+		special: ['m2m'],
+		interface: 'list-m2m',
+		options: { template },
+		sort,
+		width: 'full',
+		...(note ? { note } : {})
+	}
+});
+
 const junctionPair = (
 	junction: string,
 	guidebookField: string,
@@ -332,6 +355,17 @@ export const directusState: DirectusState = {
 			},
 			meta: { collection: 'guidebooks', field: 'pdf_updated', interface: 'datetime', sort: 9 }
 		},
+		m2mAliasField('guidebooks', 'places', '{{places_id.title}}', 20, 'Assigned places for this guidebook'),
+		m2mAliasField('guidebooks', 'events', '{{events_id.title}}', 21, 'Assigned events for this guidebook'),
+		m2mAliasField('guidebooks', 'tours', '{{tours_id.translations.title}}', 22, 'Assigned tours for this guidebook'),
+		m2mAliasField(
+			'guidebooks',
+			'places_regions',
+			'{{places_regions_id.title}}',
+			23,
+			'Region vocabulary subset for this guidebook'
+		),
+		m2mAliasField('guidebooks', 'tips', '{{tips_id.title}}', 24, 'Tips linked when using selected guidebooks scope'),
 		{
 			collection: 'guidebook_offers',
 			field: 'id',
@@ -843,17 +877,42 @@ function buildExistingCollectionExtensions() {
 				has_auto_increment: false
 			},
 			meta: { collection: 'tips', field: 'title', interface: 'input', sort: 11 }
-		}
+		},
+		m2mAliasField('tips', 'guidebooks', '{{guidebooks_id.title}}', 12, 'Selected guidebooks when audience_scope is selected_guidebooks')
 	];
 }
 
 function buildRelations() {
-	const m2o = (
-		collection: string,
+	const junctionM2o = (
+		junction: string,
 		field: string,
 		related: string,
-		junction?: { table: string; manyField: string; oneField: string }
+		meta: {
+			oneField: string | null;
+			junctionField: string;
+		}
 	) => ({
+		collection: junction,
+		field,
+		related_collection: related,
+		meta: {
+			many_collection: junction,
+			many_field: field,
+			one_collection: related,
+			one_field: meta.oneField,
+			junction_field: meta.junctionField
+		},
+		schema: {
+			table: junction,
+			column: field,
+			foreign_key_table: related,
+			foreign_key_column: 'id',
+			on_update: 'NO ACTION',
+			on_delete: 'CASCADE'
+		}
+	});
+
+	const plainM2o = (collection: string, field: string, related: string) => ({
 		collection,
 		field,
 		related_collection: related,
@@ -861,8 +920,8 @@ function buildRelations() {
 			many_collection: collection,
 			many_field: field,
 			one_collection: related,
-			one_field: junction ? junction.oneField : null,
-			junction_field: junction?.manyField ?? null
+			one_field: null,
+			junction_field: null
 		},
 		schema: {
 			table: collection,
@@ -873,57 +932,50 @@ function buildRelations() {
 		}
 	});
 
+	/** Two junction FK relations only (alias fields on parent collections; no guidebooks.places row). */
 	const m2m = (
 		junction: string,
 		guidebookField: string,
 		relatedField: string,
 		related: string,
-		aliasOnGuidebooks: string
+		aliasOnGuidebooks: string,
+		aliasOnRelated: string | null = null
 	) => [
-		m2o(junction, guidebookField, 'guidebooks', {
-			table: junction,
-			manyField: relatedField,
-			oneField: aliasOnGuidebooks
+		junctionM2o(junction, guidebookField, 'guidebooks', {
+			oneField: aliasOnGuidebooks,
+			junctionField: relatedField
 		}),
-		m2o(junction, relatedField, related, {
-			table: junction,
-			manyField: guidebookField,
-			oneField: 'guidebooks'
-		}),
-		{
-			collection: 'guidebooks',
-			field: aliasOnGuidebooks,
-			related_collection: related,
-			meta: {
-				many_collection: junction,
-				many_field: guidebookField,
-				one_collection: 'guidebooks',
-				one_field: aliasOnGuidebooks,
-				junction_field: relatedField
-			},
-			schema: null
-		}
+		junctionM2o(junction, relatedField, related, {
+			oneField: aliasOnRelated,
+			junctionField: guidebookField
+		})
 	];
 
 	return [
-		m2o('guidebooks', 'destination_id', 'destinations'),
-		m2o('guidebook_offers', 'guidebook_id', 'guidebooks'),
-		m2o('customer_guidebook_grants', 'user_id', 'directus_users'),
-		m2o('customer_guidebook_grants', 'guidebook_id', 'guidebooks'),
-		m2o('customer_guidebook_grants', 'offer_id', 'guidebook_offers'),
-		m2o('customer_guidebook_access', 'user_id', 'directus_users'),
-		m2o('customer_guidebook_access', 'guidebook_id', 'guidebooks'),
-		m2o('guidebook_purchase_claims', 'guidebook_id', 'guidebooks'),
-		m2o('guidebook_purchase_claims', 'offer_id', 'guidebook_offers'),
-		m2o('places', 'destination_id', 'destinations'),
-		m2o('events', 'destination_id', 'destinations'),
-		m2o('tours', 'destination_id', 'destinations'),
-		m2o('places_regions', 'destination_id', 'destinations'),
-		m2o('customer_tours', 'guidebook_id', 'guidebooks'),
+		plainM2o('guidebooks', 'destination_id', 'destinations'),
+		plainM2o('guidebook_offers', 'guidebook_id', 'guidebooks'),
+		plainM2o('customer_guidebook_grants', 'user_id', 'directus_users'),
+		plainM2o('customer_guidebook_grants', 'guidebook_id', 'guidebooks'),
+		plainM2o('customer_guidebook_grants', 'offer_id', 'guidebook_offers'),
+		plainM2o('customer_guidebook_access', 'user_id', 'directus_users'),
+		plainM2o('customer_guidebook_access', 'guidebook_id', 'guidebooks'),
+		plainM2o('guidebook_purchase_claims', 'guidebook_id', 'guidebooks'),
+		plainM2o('guidebook_purchase_claims', 'offer_id', 'guidebook_offers'),
+		plainM2o('places', 'destination_id', 'destinations'),
+		plainM2o('events', 'destination_id', 'destinations'),
+		plainM2o('tours', 'destination_id', 'destinations'),
+		plainM2o('places_regions', 'destination_id', 'destinations'),
+		plainM2o('customer_tours', 'guidebook_id', 'guidebooks'),
 		...m2m('guidebooks_places', 'guidebook_id', 'places_id', 'places', 'places'),
 		...m2m('guidebooks_events', 'guidebook_id', 'events_id', 'events', 'events'),
 		...m2m('guidebooks_tours', 'guidebook_id', 'tours_id', 'tours', 'tours'),
-		...m2m('guidebooks_places_regions', 'guidebook_id', 'places_regions_id', 'places_regions', 'places_regions'),
-		...m2m('tips_guidebooks', 'guidebooks_id', 'tips_id', 'tips', 'tips')
+		...m2m(
+			'guidebooks_places_regions',
+			'guidebook_id',
+			'places_regions_id',
+			'places_regions',
+			'places_regions'
+		),
+		...m2m('tips_guidebooks', 'guidebooks_id', 'tips_id', 'tips', 'tips', 'guidebooks')
 	];
 }

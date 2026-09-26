@@ -97,6 +97,18 @@ export async function runMigrationPhase(context: MigrationContext & { phase: Mig
          ON CONFLICT (slug) DO UPDATE SET stripe_price_id = EXCLUDED.stripe_price_id`,
 				[KRAKOW_LIFETIME_OFFER_ID, KRAKOW_GUIDEBOOK_ID, KRAKOW_LIFETIME_OFFER_SLUG, stripePrice]
 			);
+			const hasGuideBook = await context.database.schema.hasTable('guide_book');
+			if (hasGuideBook) {
+				await context.database.raw(
+					`UPDATE guidebooks
+           SET pdf_file = COALESCE(guidebooks.pdf_file, gb.guidebook_link),
+               pdf_updated = COALESCE(guidebooks.pdf_updated, gb.guidebook_updated),
+               pdf_version = COALESCE(guidebooks.pdf_version, gb.guidebook_version)
+           FROM guide_book gb
+           WHERE guidebooks.id = ?`,
+					[KRAKOW_GUIDEBOOK_ID]
+				);
+			}
 			break;
 		}
 		case 'backfill-content': {
