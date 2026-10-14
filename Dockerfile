@@ -37,12 +37,8 @@ COPY --from=extension-build --chown=node:node /extension-build/node_modules/@dir
 COPY --from=extension-build --chown=node:node /extension-build/node_modules/@directus-labs/seo-plugin /directus/extensions/directus-labs-seo-plugin
 
 COPY --chown=node:node ./extensions/directus-extension-slugify-interface /directus/extensions/directus-extension-slugify-interface
-COPY --chown=node:node ./extensions/directus-extension-hook-user-email-subjects /directus/extensions/directus-extension-hook-user-email-subjects
-COPY --chown=node:node ./extensions/directus-extension-endpoint-krk-guide /directus/extensions/directus-extension-endpoint-krk-guide
-COPY --chown=node:node ./extensions/directus-extension-endpoint-krk-stripe /directus/extensions/directus-extension-endpoint-krk-stripe
+COPY --chown=node:node ./extensions/directus-extension-krk-guide-bundle /directus/extensions/directus-extension-krk-guide-bundle
 COPY --chown=node:node ./extensions/directus-extension-push-notification /directus/extensions/directus-extension-push-notification
-COPY --chown=node:node ./extensions/directus-extension-krk-tours /directus/extensions/directus-extension-krk-tours
-COPY --chown=node:node ./extensions/directus-extension-krk-guidebooks /directus/extensions/directus-extension-krk-guidebooks
 COPY --chown=node:node ./extensions/directus-extension-wysiwyg-source-drawer /directus/extensions/directus-extension-wysiwyg-source-drawer
 
 COPY --chown=node:node ./templates /directus/templates

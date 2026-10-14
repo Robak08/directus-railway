@@ -43,12 +43,8 @@ services:
       - ./database:/directus/database
       - ./uploads:/directus/uploads
       - ./extensions/directus-extension-slugify-interface:/directus/extensions/directus-extension-slugify-interface
-      - ./extensions/directus-extension-hook-user-email-subjects:/directus/extensions/directus-extension-hook-user-email-subjects
-      - ./extensions/directus-extension-endpoint-krk-guide:/directus/extensions/directus-extension-endpoint-krk-guide
-      - ./extensions/directus-extension-endpoint-krk-stripe:/directus/extensions/directus-extension-endpoint-krk-stripe
+      - ./extensions/directus-extension-krk-guide-bundle:/directus/extensions/directus-extension-krk-guide-bundle
       - ./extensions/directus-extension-push-notification:/directus/extensions/directus-extension-push-notification
-      - ./extensions/directus-extension-krk-tours:/directus/extensions/directus-extension-krk-tours
-      - ./extensions/directus-extension-krk-guidebooks:/directus/extensions/directus-extension-krk-guidebooks
       - ./extensions/directus-extension-wysiwyg-source-drawer:/directus/extensions/directus-extension-wysiwyg-source-drawer
       - ./templates:/directus/templates
       - ./scripts:/directus/scripts
