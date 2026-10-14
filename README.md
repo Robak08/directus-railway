@@ -33,4 +33,4 @@ Shared commerce logic lives in `extensions/directus-extension-krk-guide-bundle/s
 - **WYSIWYG source drawer** extension widens the code editor drawer (`directus-extension-wysiwyg-source-drawer`).
 - **Push** bundle v0.6.1+ uses uuid FK scaffold for Directus 12 / Postgres.
 
-Build the guide bundle: `cd extensions/directus-extension-krk-guide-bundle`, `bun install`, `bun run build`.
+Build the guide bundle: `cd extensions/directus-extension-krk-guide-bundle`, `bun install`, `bun run build`, then **commit `dist/`** before pushing to GitHub/Railway (Dockerfile copies the extension folder as-is).

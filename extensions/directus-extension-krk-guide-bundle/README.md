@@ -17,16 +17,21 @@ bun install
 bun run build
 ```
 
-Deploy the built `dist/` (including `api.js` and `app.js`) into Directus and restart the service. The bundle must not leave `@krk/guidebooks-core` as an external import — core lives under `src/core` and is inlined at build time.
+### Railway / GitHub (production Dockerfile)
 
-After deploy:
+The repo **must include** `dist/api.js`, `dist/app.js`, and `dist/directus-state.json` in git. This folder only gitignores `node_modules` (same pattern as slugify/push). Running `bun run build` locally is not enough unless you commit the updated `dist/` before push — otherwise the Docker image copies `package.json` pointing at missing `dist/api.js` and **no** `/krk-guidebooks` routes mount.
 
-1. Admin `POST /krk-guidebooks/scaffold` — reconciles guidebook schema **and** seeds customer policy rows (`customer_guidebook_access`, `guidebooks`, catalog junctions). Check the response `summary.permissionsCreated`.
-2. Smoke (404 means the bundle API did not load):
-   - `GET /krk-guidebooks` — not 404 (401/403/200 is fine)
-   - `POST /krk-guide/guide-webhook` — not 404 (400 without a valid Stripe signature is fine)
-   - `GET /krk-guidebooks/me/access` with a customer token — 200 or 403, not 404
+Core logic is under `src/core` and is inlined at build time (no `@krk/guidebooks-core` npm package).
 
-Set `CUSTOMER_ROLE_ID` (or ensure the Customer role / places-read policy exists) so permission seed can attach rows. Commerce details: `PAYMENT_LINKS.md`.
+After Railway rebuild:
 
-Migration phases (`POST /krk-guidebooks/migration/run`) still include `replace-permissions`; scaffold and migration both call the same permission helper.
+1. Admin `POST /krk-guidebooks/scaffold` — schema + customer permission rows. Response must not be `ROUTE_NOT_FOUND`; check `summary.permissionsCreated`.
+2. Smoke (404 = bundle API not loaded):
+   - `GET /krk-guidebooks` — not 404
+   - `POST /krk-guide/guide-webhook` — not 404
+   - `GET /krk-guidebooks/me/access` (customer token) — 200 or 403, not 404
+   - `GET /krk-guidebooks/<guidebook-slug>/calendar` — not 404 (app `/kalenteri` 502s when this fails)
+
+Set `CUSTOMER_ROLE_ID` (or Customer role / places-read policy) for permission seed. Commerce: `PAYMENT_LINKS.md`.
+
+Migration `POST /krk-guidebooks/migration/run` phase `replace-permissions` uses the same permission helper as scaffold.
