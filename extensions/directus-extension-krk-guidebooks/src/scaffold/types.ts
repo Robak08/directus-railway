@@ -53,6 +53,13 @@ export type ScaffoldSummary = {
 	errors: string[];
 };
 
+export type FieldsServiceLike = {
+	readOne: (collection: string, field: string) => Promise<unknown>;
+	createField: (collection: string, data: Record<string, unknown>) => Promise<unknown>;
+	updateField: (collection: string, field: string, data: Record<string, unknown>) => Promise<unknown>;
+	deleteField: (collection: string, field: string) => Promise<void>;
+};
+
 export type RelationsServiceLike = {
 	createOne: (data: DirectusStateRelation) => Promise<unknown>;
 	updateOne: (

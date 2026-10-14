@@ -4,7 +4,7 @@ type DirectusStateField = {
   meta?: Record<string, unknown>;
 };
 
-type FieldsServiceLike = {
+export type FieldsServiceLike = {
   updateField: (
     collection: string,
     field: string,

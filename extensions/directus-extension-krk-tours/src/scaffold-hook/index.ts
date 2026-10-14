@@ -1,5 +1,6 @@
 import { defineHook } from '@directus/extensions-sdk';
 import { runScaffold, toursCollectionMissing } from '../scaffold/run-scaffold.js';
+import type { ExtensionHandlerServices } from '@krk/guidebooks-core';
 import type { DatabaseLike, ScaffoldLogger } from '../scaffold/types.js';
 
 export default defineHook(({ init }, { services, database, getSchema, logger }) => {
@@ -14,7 +15,7 @@ export default defineHook(({ init }, { services, database, getSchema, logger }) 
 
 		log.info('[krk-tours] tours collection missing; running auto-scaffold');
 		await runScaffold({
-			services,
+			services: services as unknown as ExtensionHandlerServices,
 			database,
 			getSchema,
 			logger: log

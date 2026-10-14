@@ -21,6 +21,7 @@ export interface MailerLiteCustomField {
 }
 
 export interface StripeCheckoutSessionObject {
+	id: string;
 	status?: string;
 	customer_details?: {
 		email?: string | null;
@@ -75,7 +76,7 @@ export const buildMailerLiteSubscriberParams = (
 ): MailerLiteSubscriberParams => {
 	const { firstName, lastName } = resolveUserNames(session.customer_details?.name, email);
 
-	const groups = [
+	const groups: string[] = [
 		MAILERLITE_GROUP_IDS.buyersVersionTwo,
 		MAILERLITE_GROUP_IDS.buyers,
 		MAILERLITE_GROUP_IDS.krakowTips

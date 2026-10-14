@@ -1,14 +1,8 @@
+import type { ExtensionHandlerServices, ExtensionServiceInstance } from '@krk/guidebooks-core';
 import type { ScaffoldLogger } from '../scaffold/types.js';
 
-type ItemsServiceLike = {
-	readByQuery: (query: Record<string, unknown>) => Promise<unknown[]>;
-	createOne: (data: Record<string, unknown>) => Promise<unknown>;
-};
-
 type SeedContext = {
-	services: {
-		ItemsService: new (collection: string, context: unknown) => ItemsServiceLike;
-	};
+	services: ExtensionHandlerServices;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	database: any;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,7 +36,7 @@ const SEED_TOURS = [
 const KRAKOW_REGION_SLUGS = ['krakova', 'krakow', 'kraków', 'krakow-centrum', 'krakova-keskusta'];
 
 async function findKrakowRegionId(
-	itemsService: ItemsServiceLike,
+	itemsService: ExtensionServiceInstance,
 	logger: ScaffoldLogger
 ): Promise<string | number | null> {
 	const regions = (await itemsService.readByQuery({
@@ -67,7 +61,7 @@ async function findKrakowRegionId(
 }
 
 async function findPublishedPlaceIds(
-	itemsService: ItemsServiceLike,
+	itemsService: ExtensionServiceInstance,
 	limit: number
 ): Promise<(string | number)[]> {
 	const places = (await itemsService.readByQuery({
@@ -84,7 +78,7 @@ export async function seedTours(context: SeedContext): Promise<SeedSummary> {
 	const { services, database, getSchema, logger } = context;
 	const summary: SeedSummary = { created: [], skipped: [], errors: [] };
 
-	const schema = await getSchema({ database });
+	const schema = (await getSchema({ database })) as object;
 	const toursService = new services.ItemsService('tours', {
 		schema,
 		knex: database

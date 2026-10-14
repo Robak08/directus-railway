@@ -6,11 +6,20 @@ import {
 	loadGuidebookCalendarPayload,
 	loadPublishedGuidebookBySlug
 } from './calendar.js';
-import { createServiceAccountability, userHasPdfAccess } from '../access/grant-service.js';
+import {
+	createServiceAccountability,
+	userHasPdfAccess,
+	type DirectusServices
+} from '../access/grant-service.js';
 import type { ScaffoldLogger } from '../scaffold/types.js';
+import type { DirectusRequest } from '../directus-request.js';
+import type { ExtensionHandlerServices } from '@krk/guidebooks-core';
+
+const extensionServices = (services: unknown): ExtensionHandlerServices =>
+	services as ExtensionHandlerServices;
 
 function requireAdmin(
-	req: { accountability?: { admin?: boolean } | null },
+	req: DirectusRequest,
 	res: { status: (code: number) => { send: (body: unknown) => void } }
 ) {
 	if (!req.accountability?.admin) {
@@ -21,7 +30,7 @@ function requireAdmin(
 }
 
 function requireUser(
-	req: { accountability?: { user?: string | null } | null },
+	req: DirectusRequest,
 	res: { status: (code: number) => { send: (body: unknown) => void } }
 ) {
 	if (!req.accountability?.user) {
@@ -35,31 +44,36 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 	const log = logger as ScaffoldLogger;
 
 	router.post('/scaffold', async (req, res) => {
-		if (!requireAdmin(req, res)) return;
-		const summary = await runScaffold({ services, database, getSchema, logger: log });
+		if (!requireAdmin(req as DirectusRequest, res)) return;
+		const summary = await runScaffold({
+			services: extensionServices(services),
+			database,
+			getSchema,
+			logger: log
+		});
 		res.send({ ok: summary.errors.length === 0, summary });
 	});
 
 	router.get('/migration/status', async (req, res) => {
-		if (!requireAdmin(req, res)) return;
+		if (!requireAdmin(req as DirectusRequest, res)) return;
 		const status = await getMigrationStatus(database);
 		res.send(status);
 	});
 
 	router.post('/migration/run', async (req, res) => {
-		if (!requireAdmin(req, res)) return;
+		if (!requireAdmin(req as DirectusRequest, res)) return;
 		const body = (req.body ?? {}) as { phase?: MigrationPhase; through?: MigrationPhase };
 		try {
 			const result = body.through
 				? await runMigrationThrough({
-						services,
+						services: extensionServices(services),
 						database,
 						getSchema,
 						logger: log,
 						through: body.through
 					})
 				: await runMigrationPhase({
-						services,
+						services: extensionServices(services),
 						database,
 						getSchema,
 						logger: log,
@@ -98,7 +112,7 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 	router.get('/:slug/branding', async (req, res) => {
 		try {
 			const guidebook = await loadPublishedGuidebookBySlug({
-				services,
+				services: extensionServices(services),
 				getSchema,
 				slug: req.params.slug
 			});
@@ -111,7 +125,7 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 			const items = new services.ItemsService('guidebooks', {
 				schema,
 				accountability: createServiceAccountability()
-			});
+			} as ConstructorParameters<typeof services.ItemsService>[1]);
 			const brandingFieldsWithPdf = [
 				'id',
 				'slug',
@@ -129,9 +143,13 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 
 			let row: Record<string, unknown>;
 			try {
-				row = await items.readOne(guidebook.id, { fields: brandingFieldsWithPdf });
+				row = (await items.readOne(guidebook.id, {
+					fields: brandingFieldsWithPdf
+				})) as Record<string, unknown>;
 			} catch {
-				row = await items.readOne(guidebook.id, { fields: brandingFieldsBase });
+				row = (await items.readOne(guidebook.id, {
+					fields: brandingFieldsBase
+				})) as Record<string, unknown>;
 			}
 			res.send(row);
 		} catch (error: unknown) {
@@ -144,7 +162,7 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 	router.get('/:slug/calendar', async (req, res) => {
 		try {
 			const guidebook = await loadPublishedGuidebookBySlug({
-				services,
+				services: extensionServices(services),
 				getSchema,
 				slug: req.params.slug
 			});
@@ -154,7 +172,7 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 			}
 
 			const payload = await loadGuidebookCalendarPayload({
-				services,
+				services: extensionServices(services),
 				getSchema,
 				guidebookId: guidebook.id
 			});
@@ -168,16 +186,17 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 	});
 
 	router.get('/me/access', async (req, res) => {
-		if (!requireUser(req, res)) return;
+		const directusReq = req as DirectusRequest;
+		if (!requireUser(directusReq, res)) return;
 
 		try {
 			const schema = await getSchema();
 			const items = new services.ItemsService('customer_guidebook_access', {
 				schema,
-				accountability: req.accountability
+				accountability: directusReq.accountability
 			});
 			const rows = await items.readByQuery({
-				filter: { user_id: { _eq: req.accountability!.user } },
+				filter: { user_id: { _eq: directusReq.accountability!.user } },
 				fields: [
 					'guidebook_id',
 					'guidebook_id.id',
@@ -199,11 +218,12 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 	});
 
 	router.get('/:slug/pdf', async (req, res) => {
-		if (!requireUser(req, res)) return;
+		const directusReq = req as DirectusRequest;
+		if (!requireUser(directusReq, res)) return;
 
 		try {
 			const guidebook = await loadPublishedGuidebookBySlug({
-				services,
+				services: extensionServices(services),
 				getSchema,
 				slug: req.params.slug
 			});
@@ -213,9 +233,9 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 			}
 
 			const allowed = await userHasPdfAccess({
-				services,
+				services: services as unknown as DirectusServices,
 				getSchema,
-				userId: req.accountability!.user!,
+				userId: directusReq.accountability!.user!,
 				guidebookId: guidebook.id
 			});
 			if (!allowed) {

@@ -12,7 +12,9 @@ export default defineHook(({ init }) => {
 		app.use(
 			express.json({
 				verify: (req, _res, buf) => {
-					if (isStripeWebhookRequest(req.originalUrl, req.method)) {
+					const originalUrl =
+						(req as { originalUrl?: string }).originalUrl ?? req.url ?? '';
+					if (isStripeWebhookRequest(originalUrl, req.method ?? 'GET')) {
 						(req as express.Request & { rawBody?: string }).rawBody = buf.toString('utf8');
 					}
 				}

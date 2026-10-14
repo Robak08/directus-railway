@@ -8,12 +8,19 @@ export type CheckoutSessionLike = {
 	client_reference_id?: string | null;
 };
 
-export const isPaidCheckoutSession = (session: CheckoutSessionLike): boolean => {
-	if (session.payment_status === 'paid') {
+export const isPaidCheckoutSession = (session: unknown): session is CheckoutSessionLike => {
+	if (!session || typeof session !== 'object') {
+		return false;
+	}
+	const s = session as CheckoutSessionLike;
+	if (typeof s.id !== 'string') {
+		return false;
+	}
+	if (s.payment_status === 'paid') {
 		return true;
 	}
-	if (session.status === 'complete') {
-		return session.payment_status !== 'unpaid';
+	if (s.status === 'complete') {
+		return s.payment_status !== 'unpaid';
 	}
 	return false;
 };

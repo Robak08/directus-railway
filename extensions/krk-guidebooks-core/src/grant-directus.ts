@@ -8,19 +8,20 @@ import {
 export type DirectusServiceAccountability = {
 	user: string | null;
 	role: string | null;
+	roles: string[];
 	admin: boolean;
 	app: boolean;
 	ip: string | null;
-	origin: string | null;
+	origin?: string | null;
 };
 
 export const createServiceAccountability = (): DirectusServiceAccountability => ({
 	user: null,
 	role: null,
+	roles: [],
 	admin: true,
 	app: false,
-	ip: null,
-	origin: null
+	ip: null
 });
 
 type ItemsServiceLike = {
@@ -31,11 +32,15 @@ type ItemsServiceLike = {
 	deleteByQuery: (query: Record<string, unknown>) => Promise<void>;
 };
 
+export type DirectusItemsServiceOptions = {
+	schema: object;
+	accountability?: DirectusServiceAccountability | null;
+	/** Present on CollectionsService / schema helpers; kept wide for SDK assignability. */
+	knex?: object;
+};
+
 export type DirectusServices = {
-	ItemsService: new (
-		collection: string,
-		options: { schema: unknown; accountability?: DirectusServiceAccountability | null }
-	) => ItemsServiceLike;
+	ItemsService: new (collection: string, options: DirectusItemsServiceOptions) => ItemsServiceLike;
 };
 
 export const normalizeCapabilities = (value: unknown): GuidebookCapability[] => {
@@ -62,7 +67,7 @@ export const upsertGrant = async (params: {
 }): Promise<GrantRecord> => {
 	const schema = await params.getSchema();
 	const items = new params.services.ItemsService('customer_guidebook_grants', {
-		schema,
+		schema: schema as object,
 		accountability: createServiceAccountability()
 	});
 
@@ -77,8 +82,9 @@ export const upsertGrant = async (params: {
 		limit: 1
 	});
 
-	if (existing.length > 0) {
-		return items.updateOne(existing[0].id, {
+	const existingGrant = existing[0];
+	if (existingGrant) {
+		return items.updateOne(existingGrant.id, {
 			capabilities: params.data.capabilities,
 			status: params.data.status ?? 'active',
 			offer_id: params.data.offer_id ?? null,
@@ -101,11 +107,11 @@ export const rebuildAccessForUser = async (params: {
 	const schema = await params.getSchema();
 	const accountability = createServiceAccountability();
 	const grantsService = new params.services.ItemsService('customer_guidebook_grants', {
-		schema,
+		schema: schema as object,
 		accountability
 	});
 	const accessService = new params.services.ItemsService('customer_guidebook_access', {
-		schema,
+		schema: schema as object,
 		accountability
 	});
 
@@ -140,11 +146,11 @@ export const rebuildAccessForUserGuidebook = async (params: {
 	const schema = await params.getSchema();
 	const accountability = createServiceAccountability();
 	const grantsService = new params.services.ItemsService('customer_guidebook_grants', {
-		schema,
+		schema: schema as object,
 		accountability
 	});
 	const accessService = new params.services.ItemsService('customer_guidebook_access', {
-		schema,
+		schema: schema as object,
 		accountability
 	});
 
@@ -182,7 +188,12 @@ export const rebuildAccessForUserGuidebook = async (params: {
 		return;
 	}
 
-	await accessService.updateOne(existing[0].id, {
+	const existingAccess = existing[0];
+	if (!existingAccess) {
+		return;
+	}
+
+	await accessService.updateOne(existingAccess.id, {
 		can_catalog: projection.can_catalog,
 		can_pdf: projection.can_pdf,
 		projection_version: 1,

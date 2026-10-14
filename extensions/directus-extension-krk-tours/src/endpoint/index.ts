@@ -2,8 +2,13 @@ import { defineEndpoint } from '@directus/extensions-sdk';
 import { runScaffold } from '../scaffold/run-scaffold.js';
 import type { ScaffoldLogger } from '../scaffold/types.js';
 import { seedTours } from '../seed/seed-tours.js';
+import type { DirectusRequest } from '../directus-request.js';
+import type { ExtensionHandlerServices } from '@krk/guidebooks-core';
 
-function requireAdmin(req: { accountability?: { admin?: boolean } | null }, res: { status: (code: number) => { send: (body: unknown) => void } }) {
+const extensionServices = (services: unknown): ExtensionHandlerServices =>
+	services as ExtensionHandlerServices;
+
+function requireAdmin(req: DirectusRequest, res: { status: (code: number) => { send: (body: unknown) => void } }) {
 	if (!req.accountability?.admin) {
 		res.status(403).send({ error: 'Admin access required' });
 		return false;
@@ -15,11 +20,11 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 	const log = logger as ScaffoldLogger;
 
 	router.post('/scaffold', async (req, res) => {
-		if (!requireAdmin(req, res)) return;
+		if (!requireAdmin(req as DirectusRequest, res)) return;
 
 		try {
 			const summary = await runScaffold({
-				services,
+				services: extensionServices(services),
 				database,
 				getSchema,
 				logger: log
@@ -33,11 +38,11 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 	});
 
 	router.post('/seed', async (req, res) => {
-		if (!requireAdmin(req, res)) return;
+		if (!requireAdmin(req as DirectusRequest, res)) return;
 
 		try {
 			const summary = await seedTours({
-				services,
+				services: extensionServices(services),
 				database,
 				getSchema,
 				logger: log

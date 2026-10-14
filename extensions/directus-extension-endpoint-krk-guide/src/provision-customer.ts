@@ -65,10 +65,10 @@ export interface DirectusServices {
 export const createAdminAccountability = (): Accountability => ({
 	user: null,
 	role: null,
+	roles: [],
 	admin: true,
 	app: false,
-	ip: null,
-	origin: null
+	ip: null
 });
 
 export const isProvisionUsersEnabled = (): boolean => {

@@ -49,6 +49,7 @@ describe('resolveUserNames', () => {
 
 describe('buildMailerLiteSubscriberParams', () => {
 	const baseSession: StripeCheckoutSessionObject = {
+		id: 'cs_test_1',
 		customer_details: {
 			email: 'buyer@example.com',
 			name: 'Anna Virtanen'

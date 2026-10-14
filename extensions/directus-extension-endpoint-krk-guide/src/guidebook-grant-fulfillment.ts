@@ -11,10 +11,10 @@ import {
 const adminAccountability = (): Accountability => ({
 	user: null,
 	role: null,
+	roles: [],
 	admin: true,
 	app: false,
-	ip: null,
-	origin: null
+	ip: null
 });
 
 type ItemsServiceLike = {
@@ -45,7 +45,7 @@ export const admitStripeWebhookEvent = async (params: {
 }): Promise<WebhookLedgerAdmission> => {
 	const schema = await params.getSchema();
 	const items = new params.services.ItemsService('stripe_webhook_events', {
-		schema,
+		schema: schema as object,
 		accountability: adminAccountability()
 	});
 
@@ -54,8 +54,8 @@ export const admitStripeWebhookEvent = async (params: {
 		limit: 1
 	});
 
-	if (existing.length > 0) {
-		const row = existing[0];
+	const row = existing[0];
+	if (row) {
 		if (isTerminalWebhookStatus(row.status)) {
 			return 'duplicate';
 		}
@@ -84,7 +84,7 @@ export const markStripeWebhookEventStatus = async (params: {
 }): Promise<void> => {
 	const schema = await params.getSchema();
 	const items = new params.services.ItemsService('stripe_webhook_events', {
-		schema,
+		schema: schema as object,
 		accountability: adminAccountability()
 	});
 
@@ -97,7 +97,12 @@ export const markStripeWebhookEventStatus = async (params: {
 		return;
 	}
 
-	await items.updateOne(String(existing[0].id), {
+	const row = existing[0];
+	if (!row) {
+		return;
+	}
+
+	await items.updateOne(String(row.id), {
 		status: params.status
 	});
 };
@@ -112,7 +117,7 @@ export const resolveOfferForSession = async (params: {
 	const offerId = params.session.metadata?.offer_id;
 	const schema = await params.getSchema();
 	const items = new params.services.ItemsService('guidebook_offers', {
-		schema,
+		schema: schema as object,
 		accountability: adminAccountability()
 	}) as ItemsServiceLike;
 
@@ -155,7 +160,7 @@ export const resolveDirectusUserIdForSession = async (params: {
 
 	const schema = await params.getSchema();
 	const users = new params.services.UsersService({
-		schema,
+		schema: schema as object,
 		accountability: adminAccountability()
 	});
 

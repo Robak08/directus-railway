@@ -1,13 +1,8 @@
-import type { DirectusStateField, ScaffoldLogger } from './types.js';
+import type { DirectusStateField, FieldsServiceLike, ScaffoldLogger } from './types.js';
 
 export type RemovedFieldSpec = {
 	collection: string;
 	field: string;
-};
-
-type FieldsServiceLike = {
-	readOne: (collection: string, field: string) => Promise<unknown>;
-	deleteField: (collection: string, field: string) => Promise<void>;
 };
 
 export type ReconcileRemovedFieldsResult = {

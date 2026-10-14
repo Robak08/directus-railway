@@ -108,7 +108,8 @@ export default defineEndpoint((router, { services, getSchema, logger }) => {
 			return res.status(500).send({ received: false, error: 'Missing customer email' });
 		}
 
-		const webhookServices = services as import('../guidebook-grant-fulfillment.js').GuideWebhookServices;
+		const webhookServices =
+			services as unknown as import('../guidebook-grant-fulfillment.js').GuideWebhookServices;
 
 		try {
 			const ledger = await admitStripeWebhookEvent({
@@ -126,7 +127,7 @@ export default defineEndpoint((router, { services, getSchema, logger }) => {
 			await subscribeGuidebookBuyerToMailerLite(session);
 			await provisionCustomerFromCheckout({
 				session,
-				services: services as import('../provision-customer.js').DirectusServices,
+				services: services as unknown as import('../provision-customer.js').DirectusServices,
 				getSchema,
 				logger
 			});

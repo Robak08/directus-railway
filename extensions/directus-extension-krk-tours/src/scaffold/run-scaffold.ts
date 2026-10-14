@@ -19,34 +19,11 @@ import { ensureFieldColumnExists, reconcileForeignKeyField } from './reconcile-f
 import { reconcileRemovedFields, REMOVED_FIELDS } from './reconcile-removed-fields.js';
 import { removeOrphanedTourCollectionMetadata } from './remove-orphaned-tour-collections.js';
 import { repairSchemaFromDatabase } from './sql-schema-repair.js';
-import type {
-	DatabaseLike,
-	DirectusStateField,
-	RelationsServiceLike,
-	ScaffoldLogger,
-	ScaffoldSummary
-} from './types.js';
-
-type CollectionsServiceLike = {
-	readOne: (collection: string) => Promise<unknown>;
-	createOne: (data: Record<string, unknown>) => Promise<unknown>;
-	updateOne: (collection: string, data: Record<string, unknown>) => Promise<unknown>;
-	deleteOne: (collection: string) => Promise<unknown>;
-};
-
-type FieldsServiceLike = {
-	readOne: (collection: string, field: string) => Promise<unknown>;
-	createField: (collection: string, data: Record<string, unknown>) => Promise<unknown>;
-	updateField: (collection: string, field: string, data: Record<string, unknown>) => Promise<unknown>;
-	deleteField: (collection: string, field: string) => Promise<void>;
-};
+import type { ExtensionHandlerServices } from '@krk/guidebooks-core';
+import type { DatabaseLike, DirectusStateField, ScaffoldLogger, ScaffoldSummary } from './types.js';
 
 type ScaffoldContext = {
-	services: {
-		CollectionsService: new (context: unknown) => CollectionsServiceLike;
-		FieldsService: new (context: unknown) => FieldsServiceLike;
-		RelationsService: new (context: unknown) => RelationsServiceLike;
-	};
+	services: ExtensionHandlerServices;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	database: any;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,12 +86,12 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 	if (sortedCollections.length > 0) {
 		const collectionsService = new CollectionsService({
 			knex: database,
-			schema: await getSchema()
+			schema: (await getSchema()) as object
 		});
 
 		const orphanedRemoved = await removeOrphanedTourCollectionMetadata(
 			database as DatabaseLike,
-			collectionsService,
+			collectionsService as { deleteOne: (collection: string) => Promise<unknown> },
 			logger
 		);
 		if (orphanedRemoved.length > 0) {
@@ -171,7 +148,7 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 		const updatedSchema = await getSchema({ database });
 		const fieldsService = new FieldsService({
 			knex: database,
-			schema: updatedSchema
+			schema: updatedSchema as object
 		});
 
 		for (const field of fields) {
@@ -219,7 +196,7 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 		let updatedSchema = await getSchema({ database });
 		const fieldsServiceForRelations = new FieldsService({
 			knex: database,
-			schema: updatedSchema
+			schema: updatedSchema as object
 		});
 
 		const physicalFields = fields.filter((field) => field.schema && field.type !== 'alias');
@@ -238,7 +215,7 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 		updatedSchema = await getSchema({ database });
 		const fieldsServiceAfterColumns = new FieldsService({
 			knex: database,
-			schema: updatedSchema
+			schema: updatedSchema as object
 		});
 
 		const fkFields = fields.filter((field) => field.schema?.foreign_key_table);
@@ -257,7 +234,7 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 		updatedSchema = await getSchema({ database });
 		const collectionsServiceForCleanup = new CollectionsService({
 			knex: database,
-			schema: updatedSchema
+			schema: updatedSchema as object
 		});
 
 		const ghostCleanup = await removeGhostNestedJunctions(
@@ -275,7 +252,7 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 		updatedSchema = await getSchema({ database });
 		const fieldsServiceForMeta = new FieldsService({
 			knex: database,
-			schema: updatedSchema
+			schema: updatedSchema as object
 		});
 		const metaRepair = await reconcileJunctionFieldMeta(
 			database,
@@ -323,7 +300,7 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 		updatedSchema = await getSchema({ database });
 		const collectionsServiceForStepDisplay = new CollectionsService({
 			knex: database,
-			schema: updatedSchema
+			schema: updatedSchema as object
 		});
 		const stepPlaceDisplayMeta = await reconcileTourStepPlaceDisplayMeta(
 			database as DatabaseLike,
@@ -344,7 +321,7 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 		updatedSchema = await getSchema({ database });
 		const relationsService = new RelationsService({
 			knex: database,
-			schema: updatedSchema
+			schema: updatedSchema as object
 		});
 
 		const relationResult = await ensureOrRepairRelations(
@@ -380,7 +357,7 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 
 	const collectionsServiceForColors = new CollectionsService({
 		knex: database,
-		schema: await getSchema({ database })
+		schema: (await getSchema({ database })) as object
 	});
 	const colorRepaired = await reconcileTourCollectionColors(
 		database as DatabaseLike,

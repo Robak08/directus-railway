@@ -1,4 +1,4 @@
-import type { Accountability } from '@directus/types';
+import type { ExtensionHandlerServices } from '@krk/guidebooks-core';
 import { createServiceAccountability } from '../access/grant-service.js';
 
 const PUBLIC_EVENT_FIELDS = [
@@ -26,20 +26,13 @@ export type GuidebookRow = {
 };
 
 export const loadPublishedGuidebookBySlug = async (params: {
-	services: {
-		ItemsService: new (
-			collection: string,
-			options: { schema: unknown; accountability?: Accountability | null }
-		) => {
-			readByQuery: (query: Record<string, unknown>) => Promise<GuidebookRow[]>;
-		};
-	};
+	services: ExtensionHandlerServices;
 	getSchema: () => Promise<unknown>;
 	slug: string;
 }): Promise<GuidebookRow | null> => {
 	const schema = await params.getSchema();
 	const items = new params.services.ItemsService('guidebooks', {
-		schema,
+		schema: schema as object,
 		accountability: createServiceAccountability()
 	});
 
@@ -51,25 +44,19 @@ export const loadPublishedGuidebookBySlug = async (params: {
 		fields: ['id', 'slug', 'status']
 	});
 
-	return rows[0] ?? null;
+	const row = rows[0];
+	return row && typeof row === 'object' ? (row as GuidebookRow) : null;
 };
 
 export const loadGuidebookCalendarPayload = async (params: {
-	services: {
-		ItemsService: new (
-			collection: string,
-			options: { schema: unknown; accountability?: Accountability | null }
-		) => {
-			readByQuery: (query: Record<string, unknown>) => Promise<Record<string, unknown>[]>;
-		};
-	};
+	services: ExtensionHandlerServices;
 	getSchema: () => Promise<unknown>;
 	guidebookId: string;
 }) => {
 	const schema = await params.getSchema();
 	const accountability = createServiceAccountability();
 	const junction = new params.services.ItemsService('guidebooks_events', {
-		schema,
+		schema: schema as object,
 		accountability
 	});
 
@@ -80,15 +67,15 @@ export const loadGuidebookCalendarPayload = async (params: {
 	});
 
 	const eventIds = assignments
-		.map((row) => row.events_id)
-		.filter((id): id is string => typeof id === 'string');
+		.map((row: unknown) => (row as Record<string, unknown>).events_id)
+		.filter((id: unknown): id is string => typeof id === 'string');
 
 	if (eventIds.length === 0) {
 		return { events: [], eventCategories: [] };
 	}
 
 	const eventsService = new params.services.ItemsService('events', {
-		schema,
+		schema: schema as object,
 		accountability
 	});
 
@@ -104,19 +91,20 @@ export const loadGuidebookCalendarPayload = async (params: {
 	const categoryIds = [
 		...new Set(
 			events
-				.map((event) => {
-					const category = event.category;
+				.map((event: unknown) => {
+					const ev = event as Record<string, unknown>;
+					const category = ev.category;
 					if (category && typeof category === 'object' && 'id' in category) {
 						return (category as { id?: string }).id ?? null;
 					}
 					return typeof category === 'string' ? category : null;
 				})
-				.filter((id): id is string => Boolean(id))
+				.filter((id: unknown): id is string => typeof id === 'string' && Boolean(id))
 		)
 	];
 
 	const categoriesService = new params.services.ItemsService('event_categories', {
-		schema,
+		schema: schema as object,
 		accountability
 	});
 

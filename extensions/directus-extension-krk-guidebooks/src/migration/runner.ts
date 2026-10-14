@@ -10,13 +10,14 @@ import {
 	MIGRATION_PHASES,
 	type MigrationPhase
 } from '@krk/guidebooks-core';
+import type { ExtensionHandlerServices } from '@krk/guidebooks-core';
 import { runScaffold } from '../scaffold/run-scaffold.js';
 import { rebuildAccessForUser } from '../access/grant-service.js';
 import type { ScaffoldLogger } from '../scaffold/types.js';
 import { applyGuidebookPermissions } from '../scaffold/permissions.js';
 
 export type MigrationContext = {
-	services: Record<string, unknown>;
+	services: ExtensionHandlerServices;
 	database: {
 		transaction: (fn: (trx: unknown) => Promise<void>) => Promise<void>;
 		raw: (sql: string, bindings?: unknown[]) => Promise<unknown>;
@@ -192,7 +193,9 @@ export async function runMigrationPhase(context: MigrationContext & { phase: Mig
 			let rebuilt = 0;
 			for (const row of users.rows ?? []) {
 				await rebuildAccessForUser({
-					services: context.services as Parameters<typeof rebuildAccessForUser>[0]['services'],
+					services: context.services as unknown as Parameters<
+						typeof rebuildAccessForUser
+					>[0]['services'],
 					getSchema: context.getSchema,
 					userId: row.user_id
 				});

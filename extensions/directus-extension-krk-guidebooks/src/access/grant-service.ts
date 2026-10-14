@@ -43,7 +43,7 @@ export const userHasPdfAccess = async (params: {
 }): Promise<boolean> => {
 	const schema = await params.getSchema();
 	const accessService = new params.services.ItemsService('customer_guidebook_access', {
-		schema,
+		schema: schema as object,
 		accountability: createServiceAccountability()
 	});
 

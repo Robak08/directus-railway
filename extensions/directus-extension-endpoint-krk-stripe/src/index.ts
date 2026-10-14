@@ -2,6 +2,7 @@ import { defineEndpoint } from '@directus/extensions-sdk';
 import Stripe from 'stripe';
 import type { Accountability } from '@directus/types';
 import type { OfferRecord } from '@krk/guidebooks-core';
+import type { DirectusRequest } from './directus-request.js';
 
 const DEFAULT_APP_ORIGIN = 'https://app.krakovanopas.fi';
 const CHECKOUT_SERVICE_HEADER = 'x-checkout-service-key';
@@ -17,10 +18,10 @@ type CheckoutSessionBody = {
 const adminAccountability = (): Accountability => ({
 	user: null,
 	role: null,
+	roles: [],
 	admin: true,
 	app: false,
-	ip: null,
-	origin: null
+	ip: null
 });
 
 const isNonEmptyString = (value: unknown): value is string =>
@@ -125,7 +126,8 @@ export default defineEndpoint((router, { services, getSchema }) => {
 			return;
 		}
 
-		const userId = req.accountability?.user;
+		const directusReq = req as DirectusRequest;
+		const userId = directusReq.accountability?.user;
 		const guestAuthorized = !userId && isGuestCheckoutAuthorized(req);
 
 		if (!userId && !guestAuthorized) {
@@ -254,7 +256,7 @@ export default defineEndpoint((router, { services, getSchema }) => {
 	});
 
 	router.post('/billing-portal', async (req, res) => {
-		const userId = req.accountability?.user;
+		const userId = (req as DirectusRequest).accountability?.user;
 		if (!userId) {
 			res.status(401).send({ error: 'Authentication required' });
 			return;

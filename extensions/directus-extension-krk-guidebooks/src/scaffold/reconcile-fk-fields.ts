@@ -1,16 +1,6 @@
 import { physicalTableExists, readColumnDataType } from './column-introspection.js';
 import { buildFieldPayloadForCreate } from './scaffold-field-payload.js';
-import type { DirectusStateField, ScaffoldLogger } from './types.js';
-
-type FieldsServiceLike = {
-	readOne: (collection: string, field: string) => Promise<unknown>;
-	createField: (collection: string, data: Record<string, unknown>) => Promise<unknown>;
-	updateField: (
-		collection: string,
-		field: string,
-		data: Record<string, unknown>
-	) => Promise<unknown>;
-};
+import type { DirectusStateField, FieldsServiceLike, ScaffoldLogger } from './types.js';
 
 type KnexDatabase = {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any

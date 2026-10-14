@@ -51,6 +51,9 @@
 		"test": "vitest run",
 		"test:watch": "vitest"
 	},
+	"dependencies": {
+		"@krk/guidebooks-core": "file:../krk-guidebooks-core"
+	},
 	"devDependencies": {
 		"@directus/extensions-sdk": "18.0.1",
 		"@types/node": "^22.15.21",

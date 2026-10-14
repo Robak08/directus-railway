@@ -471,7 +471,7 @@ export default defineHook(
 
         const metaRepair = await reconcileScaffoldMeta(
           database,
-          fieldsServiceForMeta,
+          fieldsServiceForMeta as unknown as import('./reconcile-scaffold-meta.js').FieldsServiceLike,
           fields,
           logger,
         );

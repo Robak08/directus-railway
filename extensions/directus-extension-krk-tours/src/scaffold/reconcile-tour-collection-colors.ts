@@ -29,7 +29,7 @@ export async function reconcileTourCollectionColors(
 			continue;
 		}
 
-		const wantColor = (meta.color as string | undefined) ?? TOUR_COLLECTION_COLOR;
+		const wantColor = (meta?.color as string | undefined) ?? TOUR_COLLECTION_COLOR;
 		const row = (await knex
 			.select('color')
 			.from('directus_collections')

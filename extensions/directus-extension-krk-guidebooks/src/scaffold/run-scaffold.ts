@@ -9,9 +9,11 @@ import { buildFieldPayloadForCreate } from './scaffold-field-payload.js';
 import { ensureFieldColumnExists, reconcileForeignKeyField } from './reconcile-fk-fields.js';
 import { reconcileRemovedFields, REMOVED_FIELDS } from './reconcile-removed-fields.js';
 import { repairSchemaFromDatabase } from './sql-schema-repair.js';
+import type { ExtensionHandlerServices } from '@krk/guidebooks-core';
 import type {
 	DatabaseLike,
 	DirectusStateField,
+	FieldsServiceLike,
 	RelationsServiceLike,
 	ScaffoldLogger,
 	ScaffoldSummary
@@ -22,17 +24,8 @@ type CollectionsServiceLike = {
 	createOne: (data: Record<string, unknown>) => Promise<unknown>;
 };
 
-type FieldsServiceLike = {
-	readOne: (collection: string, field: string) => Promise<unknown>;
-	createField: (collection: string, data: Record<string, unknown>) => Promise<unknown>;
-};
-
 type ScaffoldContext = {
-	services: {
-		CollectionsService: new (context: unknown) => CollectionsServiceLike;
-		FieldsService: new (context: unknown) => FieldsServiceLike;
-		RelationsService: new (context: unknown) => RelationsServiceLike;
-	};
+	services: ExtensionHandlerServices;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	database: any;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -67,7 +60,7 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 	if (sortedCollections.length > 0) {
 		const collectionsService = new CollectionsService({
 			knex: database,
-			schema: await getSchema()
+			schema: (await getSchema()) as object
 		});
 
 		for (const collection of sortedCollections) {
@@ -98,7 +91,10 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 
 	if (fields.length > 0) {
 		const updatedSchema = await getSchema({ database });
-		const fieldsService = new FieldsService({ knex: database, schema: updatedSchema });
+		const fieldsService = new FieldsService({
+			knex: database,
+			schema: updatedSchema as object as object
+		});
 
 		for (const field of fields) {
 			try {
@@ -120,7 +116,7 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 		}
 
 		const removedFields = await reconcileRemovedFields(
-			fieldsService,
+			fieldsService as FieldsServiceLike,
 			fields,
 			REMOVED_FIELDS,
 			logger
@@ -146,13 +142,13 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 		let updatedSchema = await getSchema({ database });
 		const fieldsServiceForRelations = new FieldsService({
 			knex: database,
-			schema: updatedSchema
+			schema: updatedSchema as object
 		});
 
 		const physicalFields = fields.filter((field) => field.schema && field.type !== 'alias');
 		for (const field of physicalFields) {
 			const columnError = await ensureFieldColumnExists(
-				fieldsServiceForRelations,
+				fieldsServiceForRelations as FieldsServiceLike,
 				database,
 				field,
 				logger
@@ -163,7 +159,7 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 		updatedSchema = await getSchema({ database });
 		const relationsService = new RelationsService({
 			knex: database,
-			schema: updatedSchema
+			schema: updatedSchema as object
 		});
 
 		const relationResult = await ensureOrRepairRelations(
