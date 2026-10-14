@@ -228,7 +228,7 @@ async function applyViaPolicies(database: PermissionsContext['database'], logger
 /**
  * Customer read access to own projection rows, published guidebook branding fields,
  * and guidebook catalog junction tables (see snapshots/guidebooks/permission-matrix.template.json).
- * Re-run POST /krk-guidebooks/scaffold after deploy to insert missing permission rows.
+ * Invoked from runScaffold and migration phase replace-permissions.
  */
 export async function applyGuidebookPermissions(context: PermissionsContext): Promise<number> {
 	const { database, logger } = context;

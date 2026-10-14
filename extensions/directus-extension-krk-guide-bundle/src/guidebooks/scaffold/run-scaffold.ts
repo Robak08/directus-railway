@@ -9,6 +9,7 @@ import { buildFieldPayloadForCreate } from './scaffold-field-payload.js';
 import { ensureFieldColumnExists, reconcileForeignKeyField } from './reconcile-fk-fields.js';
 import { reconcileRemovedFields, REMOVED_FIELDS } from './reconcile-removed-fields.js';
 import { repairSchemaFromDatabase } from './sql-schema-repair.js';
+import { applyGuidebookPermissions } from './permissions.js';
 import type { ExtensionHandlerServices } from '../../core/index.js';
 import type {
 	DatabaseLike,
@@ -179,6 +180,14 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 				`Missing relations after scaffold: ${missingRelations.join(', ')}`
 			);
 		}
+	}
+
+	try {
+		summary.permissionsCreated = await applyGuidebookPermissions({ database, logger });
+	} catch (error: unknown) {
+		const message = error instanceof Error ? error.message : 'Permission seed failed';
+		summary.errors.push(message);
+		logger.error(`[krk-guidebooks] ${message}`, error);
 	}
 
 	return summary;

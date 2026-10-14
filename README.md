@@ -23,6 +23,7 @@ Shared commerce logic lives in `extensions/directus-extension-krk-guide-bundle/s
 ## Operations
 
 - Environment template: `.env.example` (`STRIPE_*`, `CHECKOUT_SERVICE_SECRET`, `KRK_GUIDE_PROVISION_USERS`, SES, MailerLite, CORS).
+- After deploying the guide bundle: admin `POST /krk-guidebooks/scaffold` (schema + customer permission rows). See `extensions/directus-extension-krk-guide-bundle/README.md` for smoke checks (`/krk-guidebooks`, `/krk-guide/guide-webhook` must not return 404).
 - Staging checklist: `docs/RELEASE_VERIFICATION.md`.
 - Permissions smoke test: `node scripts/verify-guidebook-permissions.mjs`.
 
