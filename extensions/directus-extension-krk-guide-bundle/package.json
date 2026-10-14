@@ -1,0 +1,94 @@
+{
+	"name": "directus-extension-krk-guide-bundle",
+	"description": "Krakovan Opas guidebooks, commerce, tours, and email branding (single Directus bundle)",
+	"icon": "menu_book",
+	"version": "1.0.0",
+	"keywords": ["directus", "directus-extension", "directus-custom-bundle", "guidebooks", "tours", "stripe"],
+	"license": "UNLICENSED",
+	"type": "module",
+	"files": ["dist", "README.md"],
+	"directus:extension": {
+		"type": "bundle",
+		"host": "^12.0.0",
+		"path": {
+			"app": "dist/app.js",
+			"api": "dist/api.js"
+		},
+		"entries": [
+			{
+				"type": "hook",
+				"name": "guidebooks-scaffold",
+				"source": "src/guidebooks/scaffold-hook/index.ts"
+			},
+			{
+				"type": "hook",
+				"name": "guidebooks-validation",
+				"source": "src/guidebooks/hooks/validation.ts"
+			},
+			{
+				"type": "endpoint",
+				"name": "krk-guidebooks",
+				"source": "src/guidebooks/endpoint/index.ts"
+			},
+			{
+				"type": "hook",
+				"name": "stripe-raw-body",
+				"source": "src/guide/stripe-raw-body-hook/index.ts"
+			},
+			{
+				"type": "endpoint",
+				"name": "krk-guide",
+				"source": "src/guide/endpoint/index.ts"
+			},
+			{
+				"type": "endpoint",
+				"name": "krk-stripe",
+				"source": "src/stripe/index.ts"
+			},
+			{
+				"type": "hook",
+				"name": "tours-scaffold",
+				"source": "src/tours/scaffold-hook/index.ts"
+			},
+			{
+				"type": "hook",
+				"name": "tours-items",
+				"source": "src/tours/tours-items-hook/index.ts"
+			},
+			{
+				"type": "endpoint",
+				"name": "krk-tours",
+				"source": "src/tours/endpoint/index.ts"
+			},
+			{
+				"type": "hook",
+				"name": "user-email-subjects",
+				"source": "src/email-subjects/index.ts"
+			}
+		]
+	},
+	"scripts": {
+		"prebuild": "pnpm exec tsx scripts/sync-state.ts",
+		"build": "directus-extension build",
+		"dev": "directus-extension build -w --no-minify",
+		"link": "directus-extension link",
+		"validate": "directus-extension validate",
+		"postbuild": "node scripts/copy-state.js",
+		"test": "vitest run",
+		"test:watch": "vitest"
+	},
+	"dependencies": {
+		"@mailerlite/mailerlite-nodejs": "^1.4.0",
+		"dayjs": "^1.11.13",
+		"express": "^4.21.2",
+		"stripe": "^18.0.0"
+	},
+	"devDependencies": {
+		"@directus/extensions-sdk": "18.0.1",
+		"@types/express": "^5.0.3",
+		"@types/node": "^22.15.21",
+		"tsx": "^4.19.4",
+		"typescript": "^5.8.3",
+		"vitest": "^4.1.10"
+	}
+}
