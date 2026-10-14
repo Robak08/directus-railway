@@ -12,6 +12,8 @@ Grants and access projection helpers live in `@krk/guidebooks-core` (`upsertGran
 
 Operator CLI: `bun scripts/guidebook-migration.ts` from the backend repo root.
 
+After deploying extension changes, run `POST /krk-guidebooks/scaffold` (admin token) so new fields and customer junction read permissions (`guidebooks_places`, etc.) are applied. Without junction read, filtered `GET /items/places` returns 403 for customers.
+
 Shared types/projection logic: `@krk/guidebooks-core`.
 
 Build:

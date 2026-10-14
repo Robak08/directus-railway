@@ -29,6 +29,45 @@ const CUSTOMER_PERMISSION_SPECS: PermissionInsert[] = [
 	}
 ];
 
+/** M2M junctions required for catalog filters such as places.guidebooks.guidebook_id */
+const CUSTOMER_CATALOG_JUNCTION_PERMISSION_SPECS: PermissionInsert[] = [
+	{
+		collection: 'guidebooks_places',
+		action: 'read',
+		fields: 'id,guidebook_id,places_id',
+		permissions: null
+	},
+	{
+		collection: 'guidebooks_events',
+		action: 'read',
+		fields: 'id,guidebook_id,events_id',
+		permissions: null
+	},
+	{
+		collection: 'guidebooks_tours',
+		action: 'read',
+		fields: 'id,guidebook_id,tours_id',
+		permissions: null
+	},
+	{
+		collection: 'guidebooks_places_regions',
+		action: 'read',
+		fields: 'id,guidebook_id,places_regions_id',
+		permissions: null
+	},
+	{
+		collection: 'tips_guidebooks',
+		action: 'read',
+		fields: 'id,guidebooks_id,tips_id',
+		permissions: null
+	}
+];
+
+const ALL_CUSTOMER_PERMISSION_SPECS: PermissionInsert[] = [
+	...CUSTOMER_PERMISSION_SPECS,
+	...CUSTOMER_CATALOG_JUNCTION_PERMISSION_SPECS
+];
+
 async function usesRoleColumnOnPermissions(database: PermissionsContext['database']): Promise<boolean> {
 	return database.schema.hasColumn('directus_permissions', 'role');
 }
@@ -150,7 +189,7 @@ async function applyViaRoles(database: PermissionsContext['database'], logger: S
 
 	let created = 0;
 	for (const roleId of roleIds) {
-		for (const spec of CUSTOMER_PERMISSION_SPECS) {
+		for (const spec of ALL_CUSTOMER_PERMISSION_SPECS) {
 			if (await insertRolePermission(database, roleId, spec)) {
 				created++;
 			}
@@ -176,7 +215,7 @@ async function applyViaPolicies(database: PermissionsContext['database'], logger
 
 	let created = 0;
 	for (const policyId of policyIds) {
-		for (const spec of CUSTOMER_PERMISSION_SPECS) {
+		for (const spec of ALL_CUSTOMER_PERMISSION_SPECS) {
 			if (await insertPolicyPermission(database, policyId, spec)) {
 				created++;
 			}
@@ -187,8 +226,9 @@ async function applyViaPolicies(database: PermissionsContext['database'], logger
 }
 
 /**
- * Customer read access to own projection rows and published guidebook branding fields.
- * Full catalog gating remains in Directus policies exported via snapshots/guidebooks/.
+ * Customer read access to own projection rows, published guidebook branding fields,
+ * and guidebook catalog junction tables (see snapshots/guidebooks/permission-matrix.template.json).
+ * Re-run POST /krk-guidebooks/scaffold after deploy to insert missing permission rows.
  */
 export async function applyGuidebookPermissions(context: PermissionsContext): Promise<number> {
 	const { database, logger } = context;

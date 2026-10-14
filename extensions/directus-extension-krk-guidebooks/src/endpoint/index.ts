@@ -112,19 +112,27 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 				schema,
 				accountability: createServiceAccountability()
 			});
-			const row = await items.readOne(guidebook.id, {
-				fields: [
-					'id',
-					'slug',
-					'title',
-					'daisy_theme',
-					'marketing_url',
-					'seo_title',
-					'seo_description',
-					'pdf_version',
-					'pdf_updated'
-				]
-			});
+			const brandingFieldsWithPdf = [
+				'id',
+				'slug',
+				'title',
+				'daisy_theme',
+				'marketing_url',
+				'seo_title',
+				'seo_description',
+				'pdf_version',
+				'pdf_updated'
+			];
+			const brandingFieldsBase = brandingFieldsWithPdf.filter(
+				(field) => field !== 'pdf_version' && field !== 'pdf_updated'
+			);
+
+			let row: Record<string, unknown>;
+			try {
+				row = await items.readOne(guidebook.id, { fields: brandingFieldsWithPdf });
+			} catch {
+				row = await items.readOne(guidebook.id, { fields: brandingFieldsBase });
+			}
 			res.send(row);
 		} catch (error: unknown) {
 			const err = error as Error;
