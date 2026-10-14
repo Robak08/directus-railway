@@ -8,6 +8,8 @@ Directus 12 bundle for multi-guidebook gating (Branch B):
 - Customer access (`GET /krk-guidebooks/me/access`)
 - Entitlement-checked PDF metadata (`GET /krk-guidebooks/:slug/pdf`)
 
+Grants and access projection helpers live in `@krk/guidebooks-core` (`upsertGrant`, `rebuildAccessForUserGuidebook`). Stripe checkout fulfillment is handled by the `krk-guide` webhook extension, not this bundle.
+
 Operator CLI: `bun scripts/guidebook-migration.ts` from the backend repo root.
 
 Shared types/projection logic: `@krk/guidebooks-core`.

@@ -2,10 +2,11 @@ import type { Accountability } from '@directus/types';
 import {
 	isPaidCheckoutSession,
 	resolveCapabilitiesFromOffer,
-	type OfferRecord
+	type OfferRecord,
+	upsertGrant,
+	rebuildAccessForUserGuidebook,
+	type DirectusServices
 } from '@krk/guidebooks-core';
-import type { GrantRecord } from '@krk/guidebooks-core';
-import { projectAccessForGuidebook } from '@krk/guidebooks-core';
 
 const adminAccountability = (): Accountability => ({
 	user: null,
@@ -23,22 +24,25 @@ type ItemsServiceLike = {
 	updateOne: (key: string, data: Record<string, unknown>) => Promise<Record<string, unknown>>;
 };
 
-export type GuideWebhookServices = {
-	ItemsService: new (
-		collection: string,
-		options: { schema: unknown; accountability?: Accountability | null }
-	) => ItemsServiceLike;
+export type GuideWebhookServices = DirectusServices & {
 	UsersService: new (options: { schema: unknown; accountability?: Accountability | null }) => {
 		readByQuery: (query: Record<string, unknown>) => Promise<{ id: string; email: string | null }[]>;
 	};
 };
 
-export const recordStripeWebhookEvent = async (params: {
+export type WebhookLedgerAdmission = 'new' | 'retry' | 'duplicate';
+
+const isTerminalWebhookStatus = (status: unknown): boolean =>
+	status === 'processed' || status === 'ignored';
+
+const isActiveOffer = (offer: OfferRecord): boolean => offer.status === 'active';
+
+export const admitStripeWebhookEvent = async (params: {
 	services: GuideWebhookServices;
 	getSchema: () => Promise<unknown>;
 	stripeEventId: string;
 	eventType: string;
-}): Promise<'new' | 'duplicate'> => {
+}): Promise<WebhookLedgerAdmission> => {
 	const schema = await params.getSchema();
 	const items = new params.services.ItemsService('stripe_webhook_events', {
 		schema,
@@ -50,15 +54,52 @@ export const recordStripeWebhookEvent = async (params: {
 		limit: 1
 	});
 
-	if (existing.length > 0) return 'duplicate';
+	if (existing.length > 0) {
+		const row = existing[0];
+		if (isTerminalWebhookStatus(row.status)) {
+			return 'duplicate';
+		}
+
+		await items.updateOne(String(row.id), {
+			status: 'processing',
+			event_type: params.eventType
+		});
+		return 'retry';
+	}
 
 	await items.createOne({
 		stripe_event_id: params.stripeEventId,
 		event_type: params.eventType,
-		status: 'received'
+		status: 'processing'
 	});
 
 	return 'new';
+};
+
+export const markStripeWebhookEventStatus = async (params: {
+	services: GuideWebhookServices;
+	getSchema: () => Promise<unknown>;
+	stripeEventId: string;
+	status: 'processed' | 'ignored' | 'failed';
+}): Promise<void> => {
+	const schema = await params.getSchema();
+	const items = new params.services.ItemsService('stripe_webhook_events', {
+		schema,
+		accountability: adminAccountability()
+	});
+
+	const existing = await items.readByQuery({
+		filter: { stripe_event_id: { _eq: params.stripeEventId } },
+		limit: 1
+	});
+
+	if (existing.length === 0) {
+		return;
+	}
+
+	await items.updateOne(String(existing[0].id), {
+		status: params.status
+	});
 };
 
 export const resolveOfferForSession = async (params: {
@@ -73,18 +114,21 @@ export const resolveOfferForSession = async (params: {
 	const items = new params.services.ItemsService('guidebook_offers', {
 		schema,
 		accountability: adminAccountability()
-	});
+	}) as ItemsServiceLike;
 
 	if (offerId && offerId !== 'legacy-env-price') {
 		try {
-			return (await items.readOne(offerId)) as OfferRecord;
+			const offer = (await items.readOne(offerId)) as OfferRecord;
+			return isActiveOffer(offer) ? offer : null;
 		} catch {
 			// fall through
 		}
 	}
 
 	const rows = (await items.readByQuery({
-		filter: { slug: { _eq: 'krakow-lifetime' } },
+		filter: {
+			_and: [{ slug: { _eq: 'krakow-lifetime' } }, { status: { _eq: 'active' } }]
+		},
 		limit: 1
 	})) as OfferRecord[];
 
@@ -140,83 +184,32 @@ export const fulfillGuidebookGrantFromCheckout = async (params: {
 		throw new Error('Unpaid checkout session');
 	}
 
-	const schema = await params.getSchema();
-	const accountability = adminAccountability();
-	const grants = new params.services.ItemsService('customer_guidebook_grants', {
-		schema,
-		accountability
-	});
-	const access = new params.services.ItemsService('customer_guidebook_access', {
-		schema,
-		accountability
-	});
+	if (!isActiveOffer(params.offer)) {
+		throw new Error('Offer is not active');
+	}
 
 	const capabilities = resolveCapabilitiesFromOffer(params.offer);
-	const existing = await grants.readByQuery({
-		filter: {
-			_and: [
-				{ source_type: { _eq: 'stripe_checkout' } },
-				{ source_id: { _eq: params.session.id } },
-				{ guidebook_id: { _eq: params.offer.guidebook_id } }
-			]
-		},
-		limit: 1
-	});
 
-	if (existing.length === 0) {
-		await grants.createOne({
+	await upsertGrant({
+		services: params.services,
+		getSchema: params.getSchema,
+		data: {
 			user_id: params.userId,
 			guidebook_id: params.offer.guidebook_id,
 			capabilities,
-			status: 'active',
 			source_type: 'stripe_checkout',
 			source_id: params.session.id,
 			offer_id: params.offer.id,
+			status: 'active',
 			valid_from: new Date().toISOString(),
 			valid_until: null
-		});
-	}
-
-	const grantRows = (await grants.readByQuery({
-		filter: {
-			_and: [
-				{ user_id: { _eq: params.userId } },
-				{ guidebook_id: { _eq: params.offer.guidebook_id } }
-			]
-		},
-		limit: -1
-	})) as GrantRecord[];
-
-	const projection = projectAccessForGuidebook(
-		params.userId,
-		params.offer.guidebook_id,
-		grantRows
-	);
-
-	const accessRows = await access.readByQuery({
-		filter: {
-			_and: [
-				{ user_id: { _eq: params.userId } },
-				{ guidebook_id: { _eq: params.offer.guidebook_id } }
-			]
-		},
-		limit: 1
+		}
 	});
 
-	const payload = {
-		can_catalog: projection.can_catalog,
-		can_pdf: projection.can_pdf,
-		projection_version: 1,
-		reconciled_at: new Date().toISOString()
-	};
-
-	if (accessRows.length === 0) {
-		await access.createOne({
-			user_id: params.userId,
-			guidebook_id: params.offer.guidebook_id,
-			...payload
-		});
-	} else {
-		await access.updateOne(String(accessRows[0].id), payload);
-	}
+	await rebuildAccessForUserGuidebook({
+		services: params.services,
+		getSchema: params.getSchema,
+		userId: params.userId,
+		guidebookId: params.offer.guidebook_id
+	});
 };

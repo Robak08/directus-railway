@@ -1,4 +1,5 @@
 import { defineEndpoint } from '@directus/extensions-sdk';
+import { isPaidCheckoutSession as isPaidGuidebookCheckoutSession } from '@krk/guidebooks-core';
 import Stripe from 'stripe';
 import {
 	resolveCheckoutEmail,
@@ -7,8 +8,9 @@ import {
 } from '../mailerlite-guidebook.js';
 import { provisionCustomerFromCheckout } from '../provision-customer.js';
 import {
+	admitStripeWebhookEvent,
 	fulfillGuidebookGrantFromCheckout,
-	recordStripeWebhookEvent,
+	markStripeWebhookEventStatus,
 	resolveDirectusUserIdForSession,
 	resolveOfferForSession
 } from '../guidebook-grant-fulfillment.js';
@@ -30,16 +32,6 @@ const isCheckoutSessionCompleted = (event: Stripe.Event): event is Stripe.Event 
 	data: { object: StripeCheckoutSession };
 } => {
 	return event.type === 'checkout.session.completed';
-};
-
-const isPaidCheckoutSession = (session: StripeCheckoutSession): boolean => {
-	if (session.payment_status === 'paid') {
-		return true;
-	}
-	if (session.status === 'complete') {
-		return session.payment_status !== 'unpaid';
-	}
-	return false;
 };
 
 const resolveWebhookSecret = (): string | null => {
@@ -105,7 +97,7 @@ export default defineEndpoint((router, { services, getSchema, logger }) => {
 		}
 
 		const session = event.data.object;
-		if (!isPaidCheckoutSession(session)) {
+		if (!isPaidGuidebookCheckoutSession(session)) {
 			logger.info('[krk-guide] Ignoring unpaid checkout session');
 			return res.send({ received: true, ignored: true });
 		}
@@ -116,9 +108,11 @@ export default defineEndpoint((router, { services, getSchema, logger }) => {
 			return res.status(500).send({ received: false, error: 'Missing customer email' });
 		}
 
+		const webhookServices = services as import('../guidebook-grant-fulfillment.js').GuideWebhookServices;
+
 		try {
-			const ledger = await recordStripeWebhookEvent({
-				services: services as import('../guidebook-grant-fulfillment.js').GuideWebhookServices,
+			const ledger = await admitStripeWebhookEvent({
+				services: webhookServices,
 				getSchema,
 				stripeEventId: event.id,
 				eventType: event.type
@@ -138,33 +132,50 @@ export default defineEndpoint((router, { services, getSchema, logger }) => {
 			});
 
 			const offer = await resolveOfferForSession({
-				services: services as import('../guidebook-grant-fulfillment.js').GuideWebhookServices,
+				services: webhookServices,
 				getSchema,
 				session
 			});
 
 			const userId = await resolveDirectusUserIdForSession({
-				services: services as import('../guidebook-grant-fulfillment.js').GuideWebhookServices,
+				services: webhookServices,
 				getSchema,
 				session,
 				email
 			});
 
-			if (offer && userId) {
-				await fulfillGuidebookGrantFromCheckout({
-					services: services as import('../guidebook-grant-fulfillment.js').GuideWebhookServices,
-					getSchema,
-					session,
-					userId,
-					offer
-				});
-			} else {
-				logger.warn('[krk-guide] Skipped grant projection (missing offer or user binding)');
+			if (!offer) {
+				throw new Error('Missing active offer for checkout session');
 			}
 
-			return res.send({ received: true });
+			if (!userId) {
+				throw new Error('Missing Directus user binding for grant fulfillment');
+			}
+
+			await fulfillGuidebookGrantFromCheckout({
+				services: webhookServices,
+				getSchema,
+				session,
+				userId,
+				offer
+			});
+
+			await markStripeWebhookEventStatus({
+				services: webhookServices,
+				getSchema,
+				stripeEventId: event.id,
+				status: 'processed'
+			});
+
+			return res.send({ received: true, retried: ledger === 'retry' });
 		} catch (error: unknown) {
 			logger.error('[krk-guide] Webhook fulfillment failed', error);
+			await markStripeWebhookEventStatus({
+				services: webhookServices,
+				getSchema,
+				stripeEventId: event.id,
+				status: 'failed'
+			}).catch(() => undefined);
 			return res.status(500).send({ received: false, error: String(error) });
 		}
 	});

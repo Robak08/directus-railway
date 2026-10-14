@@ -24,7 +24,7 @@ const CUSTOMER_PERMISSION_SPECS: PermissionInsert[] = [
 		collection: 'guidebooks',
 		action: 'read',
 		fields:
-			'id,slug,title,status,daisy_theme,marketing_url,seo_title,seo_description,pdf_version,pdf_updated',
+			'id,slug,title,status,daisy_theme,calendar_enabled,marketing_url,seo_title,seo_description,pdf_version,pdf_updated',
 		permissions: { status: { _eq: 'published' } }
 	}
 ];

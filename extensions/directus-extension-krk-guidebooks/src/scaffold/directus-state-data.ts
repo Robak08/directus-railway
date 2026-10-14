@@ -306,6 +306,27 @@ export const directusState: DirectusState = {
 		},
 		{
 			collection: 'guidebooks',
+			field: 'calendar_enabled',
+			type: 'boolean',
+			schema: {
+				name: 'calendar_enabled',
+				table: 'guidebooks',
+				data_type: 'boolean',
+				default_value: true,
+				is_nullable: false,
+				is_primary_key: false,
+				has_auto_increment: false
+			},
+			meta: {
+				collection: 'guidebooks',
+				field: 'calendar_enabled',
+				interface: 'boolean',
+				sort: 61,
+				required: true
+			}
+		},
+		{
+			collection: 'guidebooks',
 			field: 'pdf_file',
 			type: 'uuid',
 			schema: {
@@ -847,6 +868,7 @@ function buildExistingCollectionExtensions() {
 		destinationFk('tours', 50),
 		destinationFk('places_regions', 50),
 		uuidFk('customer_tours', 'guidebook_id', 'customer_tours', 'guidebooks', 50, false),
+		uuidFk('customer_wishlists', 'guidebook_id', 'customer_wishlists', 'guidebooks', 50, false),
 		{
 			collection: 'tips',
 			field: 'audience_scope',
@@ -966,6 +988,7 @@ function buildRelations() {
 		plainM2o('tours', 'destination_id', 'destinations'),
 		plainM2o('places_regions', 'destination_id', 'destinations'),
 		plainM2o('customer_tours', 'guidebook_id', 'guidebooks'),
+		plainM2o('customer_wishlists', 'guidebook_id', 'guidebooks'),
 		...m2m('guidebooks_places', 'guidebook_id', 'places_id', 'places', 'places'),
 		...m2m('guidebooks_events', 'guidebook_id', 'events_id', 'events', 'events'),
 		...m2m('guidebooks_tours', 'guidebook_id', 'tours_id', 'tours', 'tours'),

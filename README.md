@@ -1,11 +1,35 @@
 # Krakovan opas DirectusCMS
 
-Email subject hook
+Directus 12 backend for Krakovan Opas: content, commerce, guidebook entitlements, push, and tours.
 
-Slugify interface plugin updated for directus v12 and included
+## Extensions (high level)
 
-push notification bundle extension (v0.6.1+ — uuid FK scaffold for Directus 12 / Postgres)
+| Extension | Role |
+|-----------|------|
+| `directus-extension-endpoint-krk-guide` | Stripe webhook, MailerLite, optional customer provisioning, grant fulfillment |
+| `directus-extension-endpoint-krk-stripe` | Checkout session, status, billing portal (BFF auth via `CHECKOUT_SERVICE_SECRET`) |
+| `directus-extension-krk-guidebooks` | Multi-guidebook schema, migration, customer access APIs, PDF gating |
+| `krk-guidebooks-core` | Shared grant projection and checkout helpers |
+| `directus-extension-krk-tours` | Tours schema and seed endpoints |
+| Push / email hooks | See extension folders and `.env.example` |
 
-directus-extension-krk-tours — tours (kierrokset) schema scaffold, permissions, and seed endpoints (v1.0.2+ uuid `places_regions_id` M2M for tours.regions)
+## Commerce and fulfillment
 
-directus-extension-wysiwyg-source-drawer — widens the WYSIWYG **Edit Source Code** drawer to `calc(100% - 3.625rem)` and fixes the CodeMirror search input visibility. Core Directus caps that drawer at two form columns (~33% on a wide screen); image/link drawers are unchanged. Rebuild with `pnpm run build` in the extension folder after editing `src/index.ts`.
+- Webhook: `POST /krk-guide/guide-webhook` — see `extensions/directus-extension-endpoint-krk-guide/PAYMENT_LINKS.md`.
+- Checkout API: `POST /krk-stripe/checkout/session`, `GET /krk-stripe/checkout/status`, `POST /krk-stripe/billing/portal`.
+- Grants use idempotent `upsertGrant` + `rebuildAccessForUserGuidebook` from `@krk/guidebooks-core`.
+- Webhook ledger collection `stripe_webhook_events` tracks `processing` / `processed` / `failed` for safe retries.
+
+## Operations
+
+- Environment template: `.env.example` (`STRIPE_*`, `CHECKOUT_SERVICE_SECRET`, `KRK_GUIDE_PROVISION_USERS`, SES, MailerLite, CORS).
+- Staging checklist: `docs/RELEASE_VERIFICATION.md`.
+- Permissions smoke test: `node scripts/verify-guidebook-permissions.mjs`.
+
+## Other notes
+
+- **Slugify** interface plugin updated for Directus v12.
+- **WYSIWYG source drawer** extension widens the code editor drawer (`directus-extension-wysiwyg-source-drawer`).
+- **Push** bundle v0.6.1+ uses uuid FK scaffold for Directus 12 / Postgres.
+
+Build an extension: `cd extensions/<name>`, `bun install`, `bun run build`.

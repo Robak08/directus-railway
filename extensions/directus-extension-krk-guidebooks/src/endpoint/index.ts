@@ -177,7 +177,8 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 					'can_pdf',
 					'guidebook_id.slug',
 					'guidebook_id.title',
-					'guidebook_id.daisy_theme'
+					'guidebook_id.daisy_theme',
+					'guidebook_id.calendar_enabled'
 				],
 				limit: -1
 			});
