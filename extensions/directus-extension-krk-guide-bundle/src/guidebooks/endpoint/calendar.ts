@@ -15,9 +15,42 @@ const PUBLIC_EVENT_FIELDS = [
 	'affiliate_link',
 	'duration',
 	'address',
-	'category',
+	{ category: ['id', 'title', 'slug', 'color'] },
 	'related_post'
 ];
+
+export type EventCategoryRow = {
+	id: string;
+	title: string;
+	slug: string;
+	color: string | null;
+};
+
+/** Attach full category objects when Directus returns a bare FK string. */
+export const hydrateEventsWithCategories = (
+	events: unknown[],
+	eventCategories: EventCategoryRow[]
+): unknown[] => {
+	const categoryById = new Map(eventCategories.map((category) => [category.id, category]));
+
+	return events.map((event) => {
+		const ev = event as Record<string, unknown>;
+		const category = ev.category;
+
+		if (category && typeof category === 'object' && category !== null && 'id' in category) {
+			return event;
+		}
+
+		if (typeof category === 'string') {
+			const hydrated = categoryById.get(category);
+			if (hydrated) {
+				return { ...ev, category: hydrated };
+			}
+		}
+
+		return event;
+	});
+};
 
 export type GuidebookRow = {
 	id: string;
@@ -108,17 +141,20 @@ export const loadGuidebookCalendarPayload = async (params: {
 		accountability
 	});
 
-	const eventCategories =
+	const eventCategories: EventCategoryRow[] =
 		categoryIds.length === 0
 			? []
-			: await categoriesService.readByQuery({
+			: (await categoriesService.readByQuery({
 					filter: {
 						_and: [{ id: { _in: categoryIds } }, { status: { _eq: 'published' } }]
 					},
 					sort: ['title'],
 					fields: ['id', 'title', 'slug', 'color'],
 					limit: -1
-				});
+				})) as EventCategoryRow[];
 
-	return { events, eventCategories };
+	return {
+		events: hydrateEventsWithCategories(events, eventCategories),
+		eventCategories
+	};
 };
