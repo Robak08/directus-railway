@@ -1,7 +1,7 @@
 import type { ExtensionHandlerServices } from '../../core/index.js';
 import { createServiceAccountability } from '../access/grant-service.js';
 
-const PUBLIC_EVENT_FIELDS = [
+export const PUBLIC_EVENT_FIELDS = [
 	'id',
 	'title',
 	'content',
@@ -15,7 +15,11 @@ const PUBLIC_EVENT_FIELDS = [
 	'affiliate_link',
 	'duration',
 	'address',
-	{ category: ['id', 'title', 'slug', 'color'] },
+	// ItemsService accepts string paths only (`category.id`). Nested objects abort the query.
+	'category.id',
+	'category.title',
+	'category.slug',
+	'category.color',
 	'related_post'
 ];
 

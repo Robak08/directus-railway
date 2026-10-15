@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	hydrateEventsWithCategories,
+	PUBLIC_EVENT_FIELDS,
 	type EventCategoryRow
 } from '../../src/guidebooks/endpoint/calendar.js';
 
@@ -18,6 +19,20 @@ const sampleCategories: EventCategoryRow[] = [
 		color: null
 	}
 ];
+
+describe('PUBLIC_EVENT_FIELDS', () => {
+	it('uses string paths so ItemsService can parse relational category fields', () => {
+		expect(PUBLIC_EVENT_FIELDS.every((field) => typeof field === 'string')).toBe(true);
+		expect(PUBLIC_EVENT_FIELDS).toEqual(
+			expect.arrayContaining([
+				'category.id',
+				'category.title',
+				'category.slug',
+				'category.color'
+			])
+		);
+	});
+});
 
 describe('hydrateEventsWithCategories', () => {
 	it('replaces category UUID with the matching eventCategories row', () => {
