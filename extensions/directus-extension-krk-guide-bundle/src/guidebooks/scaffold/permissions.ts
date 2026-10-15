@@ -1,4 +1,6 @@
-import type { ScaffoldLogger } from './types.js';
+import type { PermissionSeedMissing, PermissionSeedReport, ScaffoldLogger } from './types.js';
+
+export type { PermissionSeedReport } from './types.js';
 
 type PermissionsContext = {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -197,6 +199,96 @@ async function usesRoleColumnOnPermissions(database: PermissionsContext['databas
 	return database.schema.hasColumn('directus_permissions', 'role');
 }
 
+/** Directus 12 keeps a `role` column but effective permissions are usually policy-based. */
+async function prefersPolicyPermissionsMode(database: PermissionsContext['database']): Promise<boolean> {
+	const hasAccessTable = await database.schema.hasTable('directus_access');
+	if (hasAccessTable) {
+		const linked = (await database('directus_access').count('* as count').first()) as {
+			count?: number | string;
+		};
+		if (Number(linked?.count ?? 0) > 0) {
+			return true;
+		}
+	}
+
+	const policyRow = await database('directus_permissions').whereNotNull('policy').first();
+	return Boolean(policyRow);
+}
+
+async function findPoliciesByRoleName(
+	database: PermissionsContext['database'],
+	roleName: string
+): Promise<string[]> {
+	const roleIds = (
+		await database('directus_roles').where({ name: roleName }).select('id')
+	) as { id: string }[];
+
+	return findPolicyIdsForRoles(database, roleIds.map((row) => row.id));
+}
+
+async function findCustomerPolicyIds(database: PermissionsContext['database']): Promise<string[]> {
+	const customerRoleIds = await findCustomerRoleIds(database);
+	const fromAccess = await findPolicyIdsForRoles(database, customerRoleIds);
+
+	if (fromAccess.length > 0) {
+		return fromAccess;
+	}
+
+	const fromRoleName = await findPoliciesByRoleName(database, 'Customer');
+	if (fromRoleName.length > 0) {
+		return fromRoleName;
+	}
+
+	if (await database.schema.hasTable('directus_policies')) {
+		const rows = (await database('directus_policies')
+			.where({ name: 'Customer' })
+			.select('id')) as { id: string }[];
+		if (rows.length > 0) {
+			return rows.map((row) => row.id);
+		}
+	}
+
+	return [];
+}
+
+const expectedCustomerPermissionKeys = (): Array<{ collection: string; action: string }> => [
+	...CATALOG_READ_COLLECTIONS.map((collection) => ({ collection, action: 'read' })),
+	...ALL_CUSTOMER_PERMISSION_SPECS.map((spec) => ({
+		collection: spec.collection,
+		action: spec.action
+	}))
+];
+
+async function auditMissingOnPolicy(
+	database: PermissionsContext['database'],
+	policyId: string
+): Promise<PermissionSeedMissing[]> {
+	const missing: PermissionSeedMissing[] = [];
+
+	for (const { collection, action } of expectedCustomerPermissionKeys()) {
+		if (!(await policyPermissionExists(database, policyId, collection, action))) {
+			missing.push({ targetType: 'policy', targetId: policyId, collection, action });
+		}
+	}
+
+	return missing;
+}
+
+async function auditMissingOnRole(
+	database: PermissionsContext['database'],
+	roleId: string
+): Promise<PermissionSeedMissing[]> {
+	const missing: PermissionSeedMissing[] = [];
+
+	for (const { collection, action } of expectedCustomerPermissionKeys()) {
+		if (!(await rolePermissionExists(database, roleId, collection, action))) {
+			missing.push({ targetType: 'role', targetId: roleId, collection, action });
+		}
+	}
+
+	return missing;
+}
+
 async function findCustomerRoleIds(database: PermissionsContext['database']): Promise<string[]> {
 	const configured = process.env.CUSTOMER_ROLE_ID?.trim();
 	if (configured) {
@@ -305,14 +397,27 @@ async function insertPolicyPermission(
 	return true;
 }
 
-async function applyViaRoles(database: PermissionsContext['database'], logger: ScaffoldLogger): Promise<number> {
+async function applyViaRoles(
+	database: PermissionsContext['database'],
+	logger: ScaffoldLogger
+): Promise<PermissionSeedReport> {
 	const roleIds = await findCustomerRoleIds(database);
 	if (roleIds.length === 0) {
-		logger.warn('[krk-guidebooks] Customer role not found; skip permission seed');
-		return 0;
+		const warning =
+			'[krk-guidebooks] Customer role not found; set CUSTOMER_ROLE_ID or create Customer role';
+		logger.warn(warning);
+		return {
+			created: 0,
+			mode: 'skipped',
+			targetIds: [],
+			missing: [],
+			warnings: [warning]
+		};
 	}
 
 	let created = 0;
+	const missing: PermissionSeedMissing[] = [];
+
 	for (const roleId of roleIds) {
 		created += await ensureCatalogReadsOnRole(database, roleId, logger);
 		for (const spec of ALL_CUSTOMER_PERMISSION_SPECS) {
@@ -320,36 +425,76 @@ async function applyViaRoles(database: PermissionsContext['database'], logger: S
 				created++;
 			}
 		}
+		missing.push(...(await auditMissingOnRole(database, roleId)));
 	}
 
-	return created;
+	return {
+		created,
+		mode: 'role',
+		targetIds: roleIds,
+		missing,
+		warnings: []
+	};
 }
 
-async function applyViaPolicies(database: PermissionsContext['database'], logger: ScaffoldLogger): Promise<number> {
-	const customerRoleIds = await findCustomerRoleIds(database);
-	const policiesFromCustomer = await findPolicyIdsForRoles(database, customerRoleIds);
-	const policiesFromPlaces = await findPoliciesWithPlacesRead(database);
-
-	const policyIds = [...new Set([...policiesFromCustomer, ...policiesFromPlaces])];
+async function applyViaPolicies(
+	database: PermissionsContext['database'],
+	logger: ScaffoldLogger
+): Promise<PermissionSeedReport> {
+	const policyIds = await findCustomerPolicyIds(database);
+	const warnings: string[] = [];
 
 	if (policyIds.length === 0) {
-		logger.warn(
-			'[krk-guidebooks] No customer policies found (set CUSTOMER_ROLE_ID or grant places read on a policy first)'
-		);
-		return 0;
+		const policiesFromPlaces = await findPoliciesWithPlacesRead(database);
+		if (policiesFromPlaces.length > 0) {
+			warnings.push(
+				'[krk-guidebooks] No Customer policy via directus_access; falling back to policies that already have places read (verify Customer role uses one of these policies)'
+			);
+			policyIds.push(...policiesFromPlaces);
+		}
+	}
+
+	const uniquePolicyIds = [...new Set(policyIds)];
+
+	if (uniquePolicyIds.length === 0) {
+		const warning =
+			'[krk-guidebooks] No customer policies found (link Customer role in Access, set CUSTOMER_ROLE_ID, or create a Customer policy)';
+		logger.warn(warning);
+		return {
+			created: 0,
+			mode: 'skipped',
+			targetIds: [],
+			missing: [],
+			warnings: [warning]
+		};
 	}
 
 	let created = 0;
-	for (const policyId of policyIds) {
+	const missing: PermissionSeedMissing[] = [];
+
+	for (const policyId of uniquePolicyIds) {
 		created += await ensureCatalogReadsOnPolicy(database, policyId, logger);
 		for (const spec of ALL_CUSTOMER_PERMISSION_SPECS) {
 			if (await insertPolicyPermission(database, policyId, spec)) {
 				created++;
 			}
 		}
+		missing.push(...(await auditMissingOnPolicy(database, policyId)));
 	}
 
-	return created;
+	if (created === 0 && missing.length > 0) {
+		warnings.push(
+			`[krk-guidebooks] permissionsCreated is 0 but ${missing.length} expected row(s) still missing on target policy — check Directus Access policy assignment`
+		);
+	}
+
+	return {
+		created,
+		mode: 'policy',
+		targetIds: uniquePolicyIds,
+		missing,
+		warnings
+	};
 }
 
 /**
@@ -357,19 +502,35 @@ async function applyViaPolicies(database: PermissionsContext['database'], logger
  * and guidebook catalog junction tables (see snapshots/guidebooks/permission-matrix.template.json).
  * Invoked from runScaffold and migration phase replace-permissions.
  */
-export async function applyGuidebookPermissions(context: PermissionsContext): Promise<number> {
+export async function applyGuidebookPermissions(
+	context: PermissionsContext
+): Promise<PermissionSeedReport> {
 	const { database, logger } = context;
 	const hasPermissionsTable = await database.schema.hasTable('directus_permissions');
 	if (!hasPermissionsTable) {
-		logger.warn('[krk-guidebooks] directus_permissions missing; skip permission seed');
-		return 0;
+		const warning = '[krk-guidebooks] directus_permissions missing; skip permission seed';
+		logger.warn(warning);
+		return {
+			created: 0,
+			mode: 'skipped',
+			targetIds: [],
+			missing: [],
+			warnings: [warning]
+		};
 	}
 
-	const useRoleColumn = await usesRoleColumnOnPermissions(database);
-	const created = useRoleColumn
-		? await applyViaRoles(database, logger)
-		: await applyViaPolicies(database, logger);
+	const usePolicies = await prefersPolicyPermissionsMode(database);
+	const report = usePolicies
+		? await applyViaPolicies(database, logger)
+		: await applyViaRoles(database, logger);
 
-	logger.info(`[krk-guidebooks] Seeded ${created} customer permission row(s)`);
-	return created;
+	for (const warning of report.warnings) {
+		logger.warn(warning);
+	}
+
+	logger.info(
+		`[krk-guidebooks] Permission seed (${report.mode}): created=${report.created}, targets=${report.targetIds.length}, missing=${report.missing.length}`
+	);
+
+	return report;
 }

@@ -205,11 +205,12 @@ export async function runMigrationPhase(context: MigrationContext & { phase: Mig
 			break;
 		}
 		case 'replace-permissions': {
-			const created = await applyGuidebookPermissions({
+			const permissionReport = await applyGuidebookPermissions({
 				database: context.database,
 				logger: context.logger
 			});
-			result.permissionsCreated = created;
+			result.permissionsCreated = permissionReport.created;
+			result.permissions = permissionReport;
 			break;
 		}
 		case 'validate': {

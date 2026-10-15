@@ -41,6 +41,21 @@ export type ScaffoldLogger = {
 	error: (msg: string, extra?: unknown) => void;
 };
 
+export type PermissionSeedMissing = {
+	targetType: 'policy' | 'role';
+	targetId: string;
+	collection: string;
+	action: string;
+};
+
+export type PermissionSeedReport = {
+	created: number;
+	mode: 'policy' | 'role' | 'skipped';
+	targetIds: string[];
+	missing: PermissionSeedMissing[];
+	warnings: string[];
+};
+
 export type ScaffoldSummary = {
 	collectionsCreated: number;
 	fieldsCreated: number;
@@ -49,6 +64,7 @@ export type ScaffoldSummary = {
 	relationsRepaired: number;
 	relationsUnchanged: number;
 	permissionsCreated: number;
+	permissions: PermissionSeedReport;
 	failedRelations: string[];
 	errors: string[];
 };

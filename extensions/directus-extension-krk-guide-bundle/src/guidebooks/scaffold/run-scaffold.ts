@@ -48,6 +48,13 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 		relationsRepaired: 0,
 		relationsUnchanged: 0,
 		permissionsCreated: 0,
+		permissions: {
+			created: 0,
+			mode: 'skipped',
+			targetIds: [],
+			missing: [],
+			warnings: []
+		},
 		failedRelations: [],
 		errors: []
 	};
@@ -183,7 +190,9 @@ export async function runScaffold(context: ScaffoldContext): Promise<ScaffoldSum
 	}
 
 	try {
-		summary.permissionsCreated = await applyGuidebookPermissions({ database, logger });
+		const permissionReport = await applyGuidebookPermissions({ database, logger });
+		summary.permissionsCreated = permissionReport.created;
+		summary.permissions = permissionReport;
 	} catch (error: unknown) {
 		const message = error instanceof Error ? error.message : 'Permission seed failed';
 		summary.errors.push(message);
