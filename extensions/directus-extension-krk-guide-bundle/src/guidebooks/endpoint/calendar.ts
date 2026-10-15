@@ -60,6 +60,23 @@ export type GuidebookRow = {
 	id: string;
 	slug: string;
 	status: string;
+	calendar_enabled?: boolean | null;
+};
+
+export const isGuidebookCalendarPublic = (guidebook: GuidebookRow): boolean =>
+	guidebook.calendar_enabled !== false;
+
+const readJunctionForeignKey = (value: unknown): string | null => {
+	if (typeof value === 'string' && value.length > 0) {
+		return value;
+	}
+
+	if (value && typeof value === 'object' && 'id' in value) {
+		const id = (value as { id?: unknown }).id;
+		return typeof id === 'string' && id.length > 0 ? id : null;
+	}
+
+	return null;
 };
 
 export const loadPublishedGuidebookBySlug = async (params: {
@@ -78,7 +95,7 @@ export const loadPublishedGuidebookBySlug = async (params: {
 			_and: [{ slug: { _eq: params.slug } }, { status: { _eq: 'published' } }]
 		},
 		limit: 1,
-		fields: ['id', 'slug', 'status']
+		fields: ['id', 'slug', 'status', 'calendar_enabled']
 	});
 
 	const row = rows[0];
@@ -104,8 +121,8 @@ export const loadGuidebookCalendarPayload = async (params: {
 	});
 
 	const eventIds = assignments
-		.map((row: unknown) => (row as Record<string, unknown>).events_id)
-		.filter((id: unknown): id is string => typeof id === 'string');
+		.map((row: unknown) => readJunctionForeignKey((row as Record<string, unknown>).events_id))
+		.filter((id: unknown): id is string => typeof id === 'string' && Boolean(id));
 
 	if (eventIds.length === 0) {
 		return { events: [], eventCategories: [] };

@@ -3,6 +3,7 @@ import { runScaffold } from '../scaffold/run-scaffold.js';
 import { runMigrationPhase, runMigrationThrough, getMigrationStatus } from '../migration/runner.js';
 import type { MigrationPhase } from '../../core/index.js';
 import {
+	isGuidebookCalendarPublic,
 	loadGuidebookCalendarPayload,
 	loadPublishedGuidebookBySlug
 } from './calendar.js';
@@ -168,6 +169,11 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 			});
 			if (!guidebook) {
 				res.status(404).send({ error: 'Guidebook not found' });
+				return;
+			}
+
+			if (!isGuidebookCalendarPublic(guidebook)) {
+				res.status(404).send({ error: 'Calendar not enabled for this guidebook' });
 				return;
 			}
 

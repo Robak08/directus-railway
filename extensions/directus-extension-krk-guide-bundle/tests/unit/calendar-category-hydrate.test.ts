@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	hydrateEventsWithCategories,
+	isGuidebookCalendarPublic,
 	PUBLIC_EVENT_FIELDS,
 	type EventCategoryRow
 } from '../../src/guidebooks/endpoint/calendar.js';
@@ -19,6 +20,31 @@ const sampleCategories: EventCategoryRow[] = [
 		color: null
 	}
 ];
+
+describe('isGuidebookCalendarPublic', () => {
+	it('allows calendar when flag is true or unset', () => {
+		expect(isGuidebookCalendarPublic({ id: '1', slug: 'krakow', status: 'published' })).toBe(true);
+		expect(
+			isGuidebookCalendarPublic({
+				id: '1',
+				slug: 'krakow',
+				status: 'published',
+				calendar_enabled: true
+			})
+		).toBe(true);
+	});
+
+	it('blocks calendar when flag is false', () => {
+		expect(
+			isGuidebookCalendarPublic({
+				id: '1',
+				slug: 'krakow',
+				status: 'published',
+				calendar_enabled: false
+			})
+		).toBe(false);
+	});
+});
 
 describe('PUBLIC_EVENT_FIELDS', () => {
 	it('uses string paths so ItemsService can parse relational category fields', () => {

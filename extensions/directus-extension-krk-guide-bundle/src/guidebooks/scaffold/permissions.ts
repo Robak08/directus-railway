@@ -68,6 +68,131 @@ const ALL_CUSTOMER_PERMISSION_SPECS: PermissionInsert[] = [
 	...CUSTOMER_CATALOG_JUNCTION_PERMISSION_SPECS
 ];
 
+/** Collections the customer app reads via Directus SDK (see permission-matrix.template.json). */
+const CATALOG_READ_COLLECTIONS = [
+	'places',
+	'events',
+	'event_categories',
+	'tours',
+	'tour_steps',
+	'tours_translations',
+	'tips'
+] as const;
+
+type StoredPermissionRow = {
+	permissions: Record<string, unknown> | string | null;
+	fields: string | null;
+};
+
+async function findTemplateReadPermission(
+	database: PermissionsContext['database'],
+	collection: string,
+	options: { policy?: string; role?: string }
+): Promise<PermissionInsert | null> {
+	const query = database('directus_permissions').where({ collection, action: 'read' });
+
+	if (options.policy) {
+		query.whereNotNull('policy').whereNot('policy', options.policy);
+	} else if (options.role) {
+		query.whereNotNull('role').whereNot('role', options.role);
+	} else {
+		return null;
+	}
+
+	const row = (await query.first()) as StoredPermissionRow | undefined;
+
+	if (!row) {
+		return null;
+	}
+
+	const permissions =
+		row.permissions && typeof row.permissions === 'object'
+			? (row.permissions as Record<string, unknown>)
+			: null;
+
+	return {
+		collection,
+		action: 'read',
+		fields: row.fields ?? '*',
+		permissions
+	};
+}
+
+function fallbackCatalogRead(collection: string): PermissionInsert | null {
+	if (collection === 'places' || collection === 'events' || collection === 'event_categories') {
+		return {
+			collection,
+			action: 'read',
+			fields: '*',
+			permissions: { status: { _eq: 'published' } }
+		};
+	}
+
+	return null;
+}
+
+async function ensureCatalogReadsOnPolicy(
+	database: PermissionsContext['database'],
+	policyId: string,
+	logger: ScaffoldLogger
+): Promise<number> {
+	let created = 0;
+
+	for (const collection of CATALOG_READ_COLLECTIONS) {
+		if (await policyPermissionExists(database, policyId, collection, 'read')) {
+			continue;
+		}
+
+		const template =
+			(await findTemplateReadPermission(database, collection, { policy: policyId })) ??
+			fallbackCatalogRead(collection);
+
+		if (!template) {
+			logger.warn(
+				`[krk-guidebooks] No read template for ${collection}; skip clone to policy ${policyId}`
+			);
+			continue;
+		}
+
+		if (await insertPolicyPermission(database, policyId, template)) {
+			created++;
+		}
+	}
+
+	return created;
+}
+
+async function ensureCatalogReadsOnRole(
+	database: PermissionsContext['database'],
+	roleId: string,
+	logger: ScaffoldLogger
+): Promise<number> {
+	let created = 0;
+
+	for (const collection of CATALOG_READ_COLLECTIONS) {
+		if (await rolePermissionExists(database, roleId, collection, 'read')) {
+			continue;
+		}
+
+		const template =
+			(await findTemplateReadPermission(database, collection, { role: roleId })) ??
+			fallbackCatalogRead(collection);
+
+		if (!template) {
+			logger.warn(
+				`[krk-guidebooks] No read template for ${collection}; skip clone to role ${roleId}`
+			);
+			continue;
+		}
+
+		if (await insertRolePermission(database, roleId, template)) {
+			created++;
+		}
+	}
+
+	return created;
+}
+
 async function usesRoleColumnOnPermissions(database: PermissionsContext['database']): Promise<boolean> {
 	return database.schema.hasColumn('directus_permissions', 'role');
 }
@@ -189,6 +314,7 @@ async function applyViaRoles(database: PermissionsContext['database'], logger: S
 
 	let created = 0;
 	for (const roleId of roleIds) {
+		created += await ensureCatalogReadsOnRole(database, roleId, logger);
 		for (const spec of ALL_CUSTOMER_PERMISSION_SPECS) {
 			if (await insertRolePermission(database, roleId, spec)) {
 				created++;
@@ -215,6 +341,7 @@ async function applyViaPolicies(database: PermissionsContext['database'], logger
 
 	let created = 0;
 	for (const policyId of policyIds) {
+		created += await ensureCatalogReadsOnPolicy(database, policyId, logger);
 		for (const spec of ALL_CUSTOMER_PERMISSION_SPECS) {
 			if (await insertPolicyPermission(database, policyId, spec)) {
 				created++;
