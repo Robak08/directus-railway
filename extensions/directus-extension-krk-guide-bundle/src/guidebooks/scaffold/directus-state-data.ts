@@ -900,7 +900,17 @@ function buildExistingCollectionExtensions() {
 			},
 			meta: { collection: 'tips', field: 'title', interface: 'input', sort: 11 }
 		},
-		m2mAliasField('tips', 'guidebooks', '{{guidebooks_id.title}}', 12, 'Selected guidebooks when audience_scope is selected_guidebooks')
+		m2mAliasField('tips', 'guidebooks', '{{guidebooks_id.title}}', 12, 'Selected guidebooks when audience_scope is selected_guidebooks'),
+		m2mAliasField('places', 'guidebooks', '{{guidebook_id.title}}', 51, 'Guidebooks this place is assigned to'),
+		m2mAliasField('events', 'guidebooks', '{{guidebook_id.title}}', 51, 'Guidebooks this event is assigned to'),
+		m2mAliasField('tours', 'guidebooks', '{{guidebook_id.title}}', 51, 'Guidebooks this tour is assigned to'),
+		m2mAliasField(
+			'places_regions',
+			'guidebooks',
+			'{{guidebook_id.title}}',
+			51,
+			'Guidebooks using this region in their vocabulary'
+		)
 	];
 }
 
@@ -989,15 +999,16 @@ function buildRelations() {
 		plainM2o('places_regions', 'destination_id', 'destinations'),
 		plainM2o('customer_tours', 'guidebook_id', 'guidebooks'),
 		plainM2o('customer_wishlists', 'guidebook_id', 'guidebooks'),
-		...m2m('guidebooks_places', 'guidebook_id', 'places_id', 'places', 'places'),
-		...m2m('guidebooks_events', 'guidebook_id', 'events_id', 'events', 'events'),
-		...m2m('guidebooks_tours', 'guidebook_id', 'tours_id', 'tours', 'tours'),
+		...m2m('guidebooks_places', 'guidebook_id', 'places_id', 'places', 'places', 'guidebooks'),
+		...m2m('guidebooks_events', 'guidebook_id', 'events_id', 'events', 'events', 'guidebooks'),
+		...m2m('guidebooks_tours', 'guidebook_id', 'tours_id', 'tours', 'tours', 'guidebooks'),
 		...m2m(
 			'guidebooks_places_regions',
 			'guidebook_id',
 			'places_regions_id',
 			'places_regions',
-			'places_regions'
+			'places_regions',
+			'guidebooks'
 		),
 		...m2m('tips_guidebooks', 'guidebooks_id', 'tips_id', 'tips', 'tips', 'guidebooks')
 	];
