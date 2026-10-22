@@ -2,7 +2,7 @@
 	"name": "directus-extension-krk-guide-bundle",
 	"description": "Krakovan Opas guidebooks, commerce, tours, and email branding (single Directus bundle)",
 	"icon": "menu_book",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"keywords": ["directus", "directus-extension", "directus-custom-bundle", "guidebooks", "tours", "stripe"],
 	"license": "UNLICENSED",
 	"type": "module",
