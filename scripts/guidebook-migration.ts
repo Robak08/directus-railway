@@ -25,7 +25,7 @@ const envKey = envName === 'production' ? 'PRODUCTION' : 'STAGING';
 const baseUrl =
 	process.env[`DIRECTUS_${envKey}_URL`] ??
 	process.env.DIRECTUS_URL ??
-	'http://localhost:8055';
+	'https://cms.krakovanopas.fi';
 const token =
 	process.env[`DIRECTUS_${envKey}_TOKEN`] ?? process.env.DIRECTUS_ADMIN_TOKEN ?? '';
 
