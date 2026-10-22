@@ -213,6 +213,21 @@ export async function runMigrationPhase(context: MigrationContext & { phase: Mig
 			result.permissions = permissionReport;
 			break;
 		}
+		case 'backfill-catalog-destinations': {
+			const tables = ['places', 'events', 'tours', 'places_regions'] as const;
+			for (const table of tables) {
+				const hasTable = await context.database.schema.hasTable(table);
+				if (!hasTable) {
+					continue;
+				}
+				await context.database.raw(
+					`UPDATE ${table} SET destination_id = ? WHERE destination_id IS NULL`,
+					[KRAKOW_DESTINATION_ID]
+				);
+			}
+			result.tables = tables;
+			break;
+		}
 		case 'validate': {
 			result.guidebookCount = (
 				await context.database.raw(`SELECT COUNT(*)::int AS count FROM guidebooks`)

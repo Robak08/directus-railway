@@ -18,6 +18,7 @@ export const MIGRATION_PHASES = [
 	'backfill-grants',
 	'rebuild-access',
 	'replace-permissions',
+	'backfill-catalog-destinations',
 	'validate',
 	'contract'
 ] as const;

@@ -1,5 +1,6 @@
 import type { ExtensionHandlerServices } from '../../core/index.js';
 import { createServiceAccountability } from '../access/grant-service.js';
+import { catalogPublishedDestinationFilter } from './catalog-destination-filter.js';
 
 export const PUBLIC_EVENT_FIELDS = [
 	'id',
@@ -60,24 +61,12 @@ export type GuidebookRow = {
 	id: string;
 	slug: string;
 	status: string;
+	destination_id?: string | null;
 	calendar_enabled?: boolean | null;
 };
 
 export const isGuidebookCalendarPublic = (guidebook: GuidebookRow): boolean =>
 	guidebook.calendar_enabled !== false;
-
-const readJunctionForeignKey = (value: unknown): string | null => {
-	if (typeof value === 'string' && value.length > 0) {
-		return value;
-	}
-
-	if (value && typeof value === 'object' && 'id' in value) {
-		const id = (value as { id?: unknown }).id;
-		return typeof id === 'string' && id.length > 0 ? id : null;
-	}
-
-	return null;
-};
 
 export const loadPublishedGuidebookBySlug = async (params: {
 	services: ExtensionHandlerServices;
@@ -95,7 +84,7 @@ export const loadPublishedGuidebookBySlug = async (params: {
 			_and: [{ slug: { _eq: params.slug } }, { status: { _eq: 'published' } }]
 		},
 		limit: 1,
-		fields: ['id', 'slug', 'status', 'calendar_enabled']
+		fields: ['id', 'slug', 'status', 'destination_id', 'calendar_enabled']
 	});
 
 	const row = rows[0];
@@ -105,28 +94,14 @@ export const loadPublishedGuidebookBySlug = async (params: {
 export const loadGuidebookCalendarPayload = async (params: {
 	services: ExtensionHandlerServices;
 	getSchema: () => Promise<unknown>;
-	guidebookId: string;
+	destinationId: string | null | undefined;
 }) => {
-	const schema = await params.getSchema();
-	const accountability = createServiceAccountability();
-	const junction = new params.services.ItemsService('guidebooks_events', {
-		schema: schema as object,
-		accountability
-	});
-
-	const assignments = await junction.readByQuery({
-		filter: { guidebook_id: { _eq: params.guidebookId } },
-		fields: ['events_id'],
-		limit: -1
-	});
-
-	const eventIds = assignments
-		.map((row: unknown) => readJunctionForeignKey((row as Record<string, unknown>).events_id))
-		.filter((id: unknown): id is string => typeof id === 'string' && Boolean(id));
-
-	if (eventIds.length === 0) {
+	if (!params.destinationId) {
 		return { events: [], eventCategories: [] };
 	}
+
+	const schema = await params.getSchema();
+	const accountability = createServiceAccountability();
 
 	const eventsService = new params.services.ItemsService('events', {
 		schema: schema as object,
@@ -134,9 +109,7 @@ export const loadGuidebookCalendarPayload = async (params: {
 	});
 
 	const events = await eventsService.readByQuery({
-		filter: {
-			_and: [{ id: { _in: eventIds } }, { status: { _eq: 'published' } }]
-		},
+		filter: catalogPublishedDestinationFilter(params.destinationId),
 		sort: ['-start_date'],
 		fields: PUBLIC_EVENT_FIELDS,
 		limit: -1

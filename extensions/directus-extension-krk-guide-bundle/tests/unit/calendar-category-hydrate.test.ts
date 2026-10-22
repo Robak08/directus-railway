@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { catalogPublishedDestinationFilter } from '../../src/guidebooks/endpoint/catalog-destination-filter.js';
 import {
 	hydrateEventsWithCategories,
 	isGuidebookCalendarPublic,
@@ -20,6 +21,17 @@ const sampleCategories: EventCategoryRow[] = [
 		color: null
 	}
 ];
+
+describe('catalogPublishedDestinationFilter', () => {
+	it('filters published catalog rows by destination_id', () => {
+		expect(catalogPublishedDestinationFilter('dest-krakow')).toEqual({
+			_and: [
+				{ destination_id: { _eq: 'dest-krakow' } },
+				{ status: { _eq: 'published' } }
+			]
+		});
+	});
+});
 
 describe('isGuidebookCalendarPublic', () => {
 	it('allows calendar when flag is true or unset', () => {

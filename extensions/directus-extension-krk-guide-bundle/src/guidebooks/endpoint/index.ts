@@ -131,6 +131,7 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 				'id',
 				'slug',
 				'title',
+				'destination_id',
 				'daisy_theme',
 				'marketing_url',
 				'seo_title',
@@ -180,7 +181,7 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 			const payload = await loadGuidebookCalendarPayload({
 				services: extensionServices(services),
 				getSchema,
-				guidebookId: guidebook.id
+				destinationId: guidebook.destination_id
 			});
 			res.setHeader('Cache-Control', 'public, max-age=300');
 			res.send(payload);
@@ -210,6 +211,7 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 					'can_pdf',
 					'guidebook_id.slug',
 					'guidebook_id.title',
+					'guidebook_id.destination_id',
 					'guidebook_id.daisy_theme',
 					'guidebook_id.calendar_enabled'
 				],

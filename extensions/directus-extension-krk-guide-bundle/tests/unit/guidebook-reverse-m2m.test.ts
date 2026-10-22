@@ -5,7 +5,7 @@ import { relationNeedsRepair } from '../../src/guidebooks/scaffold/relation-help
 import type { RelationSnapshot } from '../../src/guidebooks/scaffold/types.js';
 
 describe('guidebook content reverse M2M aliases', () => {
-	it('declares places.guidebooks alias for app filter guidebooks.guidebook_id', () => {
+	it('declares places.guidebooks alias for Directus admin assignment (catalog scopes destination_id)', () => {
 		const field = directusState.fields.find(
 			(f) => f.collection === 'places' && f.field === 'guidebooks'
 		);
