@@ -36,7 +36,7 @@ services:
       dockerfile: Dockerfile.dev
       pull: true
       args:
-        DIRECTUS_VERSION: "12.5.0"
+        DIRECTUS_VERSION: "12.6.1"
     ports:
       - 8055:8055
     volumes:

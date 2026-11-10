@@ -1,10 +1,10 @@
-# Production image for Railway — Directus 12.5.0 with hardened multi-stage build
-ARG DIRECTUS_VERSION=12.5.0
+# Production image for Railway — Directus 12.6.1 with hardened multi-stage build
+ARG DIRECTUS_VERSION=12.6.1
 
 # Stage 1: install npm extensions and patch host ranges for v12
-FROM node:22-alpine AS extension-build
+FROM node:26-alpine AS extension-build
 
-RUN corepack enable
+RUN npm install --global pnpm
 
 WORKDIR /extension-build
 
