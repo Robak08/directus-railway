@@ -15,6 +15,11 @@ import {
 import type { ScaffoldLogger } from '../scaffold/types.js';
 import type { DirectusRequest } from '../directus-request.js';
 import type { ExtensionHandlerServices } from '../../core/index.js';
+import {
+	GUIDEBOOK_BRANDING_FIELDS_BASE,
+	GUIDEBOOK_BRANDING_FIELDS_WITH_PDF,
+	PUBLISHED_GUIDEBOOK_LISTING_FIELDS
+} from './guidebook-query-fields.js';
 
 const extensionServices = (services: unknown): ExtensionHandlerServices =>
 	services as ExtensionHandlerServices;
@@ -95,16 +100,8 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 		});
 		const rows = await items.readByQuery({
 			filter: { status: { _eq: 'published' } },
-			sort: ['sort', 'title'],
-			fields: [
-				'id',
-				'slug',
-				'title',
-				'daisy_theme',
-				'marketing_url',
-				'seo_title',
-				'seo_description'
-			],
+			sort: ['title'],
+			fields: [...PUBLISHED_GUIDEBOOK_LISTING_FIELDS],
 			limit: -1
 		});
 		res.send({ guidebooks: rows });
@@ -127,30 +124,18 @@ export default defineEndpoint((router, { services, database, getSchema, logger }
 				schema,
 				accountability: createServiceAccountability()
 			} as ConstructorParameters<typeof services.ItemsService>[1]);
-			const brandingFieldsWithPdf = [
-				'id',
-				'slug',
-				'title',
-				'destination_id',
-				'daisy_theme',
-				'marketing_url',
-				'seo_title',
-				'seo_description',
-				'pdf_version',
-				'pdf_updated'
-			];
-			const brandingFieldsBase = brandingFieldsWithPdf.filter(
-				(field) => field !== 'pdf_version' && field !== 'pdf_updated'
-			);
-
 			let row: Record<string, unknown>;
 			try {
 				row = (await items.readOne(guidebook.id, {
-					fields: brandingFieldsWithPdf
+					fields: [...GUIDEBOOK_BRANDING_FIELDS_WITH_PDF]
 				})) as Record<string, unknown>;
-			} catch {
+			} catch (readWithPdfError: unknown) {
+				const pdfErr = readWithPdfError as Error;
+				log.warn(
+					`[krk-guidebooks] /${req.params.slug}/branding read with pdf fields failed: ${pdfErr.message}; retrying without pdf_version/pdf_updated`
+				);
 				row = (await items.readOne(guidebook.id, {
-					fields: brandingFieldsBase
+					fields: [...GUIDEBOOK_BRANDING_FIELDS_BASE]
 				})) as Record<string, unknown>;
 			}
 			res.send(row);
